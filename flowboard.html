@@ -1,0 +1,2491 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FLOWBOARD — Live Warehouse Control</title>
+<style>
+/* ============================================================
+   FLOWBOARD — light operations theme
+   Brand chrome: signal yellow + graphite. Functional accents:
+   blue = Picking, violet = Groot, green = Filling.
+   ============================================================ */
+:root{
+  /* surfaces */
+  --paper:#F2F4F7;
+  --card:#FFFFFF;
+  --card-2:#FBFCFD;
+  --line:#E4E8EF;
+  --line-soft:#EDF0F5;
+  --line-hi:#D5DBE5;
+
+  /* brand */
+  --brand:#FFD400;
+  --brand-2:#FFC400;
+  --brand-ink:#171A1F;
+
+  /* type */
+  --ink:#10141A;
+  --ink-2:#39424F;
+  --ink-3:#6B7686;
+  --ink-4:#939FB0;
+
+  /* accents */
+  --picking:#1D6FF2;      --picking-dim:rgba(29,111,242,.10);
+  --groot:#7B45E8;        --groot-dim:rgba(123,69,232,.10);
+  --filling:#00A46A;      --filling-dim:rgba(0,164,106,.10);
+  --warn:#EF8A12;
+  --crit:#E0333B;
+  --ok:#00A46A;
+
+  --accent:var(--picking);
+  --accent-dim:var(--picking-dim);
+
+  /* geometry */
+  --r-xs:8px; --r-sm:12px; --r-md:18px; --r-lg:26px; --r-xl:32px;
+  --pad:clamp(15px,1.45vw,27px);
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 14px 34px -20px rgba(16,24,40,.35);
+  --shadow-lift:0 2px 4px rgba(16,24,40,.06), 0 26px 52px -24px rgba(16,24,40,.42);
+  --shadow-pop:0 40px 90px -36px rgba(16,24,40,.55), 0 2px 6px rgba(16,24,40,.08);
+
+  /* type scale */
+  --fs-mega:clamp(40px,5.4vw,80px);
+  --fs-xl:clamp(26px,2.4vw,38px);
+  --fs-lg:clamp(18px,1.4vw,22px);
+  --fs-md:15px;
+  --fs-sm:13px;
+  --fs-xs:11px;
+
+  --ease:cubic-bezier(.22,.7,.26,1);
+  --spring:cubic-bezier(.34,1.42,.42,1);
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-padding-top:var(--safe-t);-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  padding-top:var(--safe-t);
+  padding-bottom:var(--safe-b);
+  background:var(--paper);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",Segoe UI,Roboto,sans-serif;
+  font-size:var(--fs-md);
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+/* ambient light field */
+body::before{
+  content:"";position:fixed;inset:-25%;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(48vw 40vw at 8% -8%, rgba(255,212,0,.40), transparent 62%),
+    radial-gradient(42vw 36vw at 96% 2%, rgba(29,111,242,.13), transparent 62%),
+    radial-gradient(56vw 46vw at 52% 112%, rgba(0,164,106,.12), transparent 64%),
+    linear-gradient(180deg,#FBFCFE 0%,#F2F4F7 48%,#EEF1F5 100%);
+  animation:drift 26s ease-in-out infinite alternate;
+}
+@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-2.5%,1.5%,0) scale(1.06)}}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.6;
+  background-image:radial-gradient(rgba(16,24,40,.07) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(130vw 95vh at 50% 0%,#000 12%,transparent 76%);
+          mask-image:radial-gradient(130vw 95vh at 50% 0%,#000 12%,transparent 76%);
+}
+::selection{background:rgba(255,212,0,.55)}
+:focus-visible{outline:3px solid rgba(29,111,242,.55);outline-offset:2px;border-radius:8px}
+
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:-.022em}
+.meta{font-size:var(--fs-xs);letter-spacing:.13em;text-transform:uppercase;color:var(--ink-4);font-weight:700}
+
+/* entrance choreography */
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.shell{max-width:1880px;margin:0 auto;padding:clamp(12px,1.2vw,22px) clamp(12px,1.7vw,32px) 64px;display:flex;flex-direction:column;gap:clamp(12px,1.2vw,20px)}
+.shell > *{animation:rise .7s var(--ease) both}
+.shell > *:nth-child(2){animation-delay:.05s}
+.shell > *:nth-child(3){animation-delay:.10s}
+.shell > *:nth-child(4){animation-delay:.16s}
+.shell > *:nth-child(5){animation-delay:.22s}
+.shell > *:nth-child(6){animation-delay:.28s}
+
+.glass{
+  background:linear-gradient(180deg,var(--card) 0%,var(--card-2) 100%);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.top{
+  position:sticky;top:var(--safe-t);z-index:40;overflow:hidden;
+  display:flex;align-items:center;gap:clamp(12px,1.6vw,30px);
+  padding:13px clamp(14px,1.4vw,24px);
+  border-radius:var(--r-lg);
+  background:rgba(255,255,255,.86);
+  -webkit-backdrop-filter:saturate(170%) blur(22px);backdrop-filter:saturate(170%) blur(22px);
+}
+.top::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;
+  background:linear-gradient(90deg,var(--brand) 0%,var(--brand-2) 28%,var(--picking) 62%,var(--filling) 100%);
+  background-size:220% 100%;animation:slide 9s linear infinite}
+@keyframes slide{to{background-position:220% 0}}
+.brand{display:flex;align-items:center;gap:13px;min-width:0}
+.mark{width:40px;height:40px;border-radius:13px;position:relative;flex:none;
+  background:linear-gradient(150deg,var(--brand),var(--brand-2));
+  box-shadow:0 8px 20px -8px rgba(255,196,0,.95), inset 0 -2px 0 rgba(0,0,0,.08);
+  display:grid;place-items:center}
+.mark::after{content:"";width:15px;height:15px;border-radius:4px;background:var(--brand-ink);
+  animation:tumble 7s var(--ease) infinite}
+@keyframes tumble{0%,72%{transform:rotate(0) scale(1)}80%{transform:rotate(45deg) scale(.82)}88%{transform:rotate(90deg) scale(1)}100%{transform:rotate(90deg)}}
+.brand h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2em;color:var(--ink)}
+.brand p{margin:1px 0 0;font-size:11px;color:var(--ink-4);letter-spacing:.1em;font-weight:600}
+
+.live{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(0,164,106,.26);background:rgba(0,164,106,.08);color:#04724F;font-size:11px;letter-spacing:.14em;font-weight:800}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:pulse 2.2s var(--ease) infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,164,106,.55)}70%{box-shadow:0 0 0 11px rgba(0,164,106,0)}100%{box-shadow:0 0 0 0 rgba(0,164,106,0)}}
+
+.clockwrap{margin-left:auto;display:flex;align-items:baseline;gap:14px}
+.clock{font-size:clamp(28px,2.6vw,44px);font-weight:300;letter-spacing:-.02em;line-height:1;color:var(--ink)}
+.clock small{font-size:.42em;color:var(--ink-4);font-weight:600;margin-left:3px}
+.shiftbadge{padding:7px 13px;border-radius:999px;background:var(--brand);color:var(--brand-ink);
+  font-size:11px;letter-spacing:.14em;font-weight:800;white-space:nowrap;box-shadow:0 6px 16px -8px rgba(255,196,0,1)}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* buttons */
+.btn{
+  appearance:none;border:1px solid var(--line-hi);background:#fff;color:var(--ink);
+  padding:11px 17px;border-radius:14px;font:inherit;font-size:12.5px;font-weight:700;letter-spacing:.02em;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .2s var(--spring),box-shadow .2s var(--ease),background .2s var(--ease),border-color .2s var(--ease);
+  box-shadow:0 1px 2px rgba(16,24,40,.06);
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1.5px);box-shadow:0 10px 22px -12px rgba(16,24,40,.5);border-color:var(--ink-4)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,212,0,.35),transparent 60%);opacity:0;transition:opacity .35s var(--ease)}
+.btn:hover::after{opacity:1}
+.btn.primary{background:linear-gradient(180deg,var(--brand),var(--brand-2));border-color:#EFB800;color:var(--brand-ink);
+  box-shadow:0 10px 24px -12px rgba(255,196,0,1)}
+.btn.primary:hover{filter:brightness(1.04);box-shadow:0 16px 30px -14px rgba(255,196,0,1)}
+.btn.ghost{background:transparent;border-color:var(--line-hi);color:var(--ink-2);box-shadow:none}
+.btn.danger{border-color:rgba(224,51,59,.35);color:var(--crit);background:rgba(224,51,59,.06)}
+.btn.sm{padding:8px 12px;font-size:11.5px;border-radius:11px}
+.btn.wide{width:100%;justify-content:center}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============================================================
+   Setup
+   ============================================================ */
+.setup{padding:var(--pad);display:none}
+.setup.open{display:block}
+.setup-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.setup-head h2{margin:0;font-size:var(--fs-lg);font-weight:700;letter-spacing:-.015em}
+.setup-head p{margin:0;color:var(--ink-3);font-size:13px;max-width:62ch}
+.seg{display:inline-flex;padding:4px;gap:4px;border-radius:14px;background:#EFF2F6;border:1px solid var(--line)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink-3);font:inherit;font-size:12px;font-weight:700;
+  letter-spacing:.06em;padding:8px 15px;border-radius:10px;cursor:pointer;transition:.25s var(--spring)}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 2px 8px -3px rgba(16,24,40,.35);transform:translateY(-1px)}
+
+.grid-setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:15px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-4);font-weight:700}
+.field input,.field select{
+  appearance:none;width:100%;padding:13px 15px;border-radius:14px;border:1.5px solid var(--line);
+  background:#fff;color:var(--ink);font:inherit;font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  transition:border-color .2s var(--ease),box-shadow .2s var(--ease);
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--picking);box-shadow:0 0 0 4px rgba(29,111,242,.13)}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.field input[type=number]{-moz-appearance:textfield}
+.field .err{font-size:11.5px;color:var(--crit);font-weight:600;display:none}
+.field.invalid input{border-color:var(--crit);box-shadow:0 0 0 4px rgba(224,51,59,.12);animation:shake .4s var(--ease)}
+.field.invalid .err{display:block;animation:rise .3s var(--ease)}
+@keyframes shake{20%{transform:translateX(-5px)}45%{transform:translateX(4px)}70%{transform:translateX(-2px)}100%{transform:none}}
+.subgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.setup-card{border:1px solid var(--line);border-radius:var(--r-md);padding:16px;background:#fff;position:relative;overflow:hidden;
+  transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.setup-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.setup-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
+.setup-card h3{margin:0 0 13px;font-size:12px;letter-spacing:.14em;font-weight:800;color:var(--ink-2);display:flex;align-items:center;gap:9px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-dim)}
+
+/* ============================================================
+   Process cards
+   ============================================================ */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.1vw,20px)}
+.card{position:relative;overflow:hidden;padding:var(--pad);display:flex;flex-direction:column;gap:15px;isolation:isolate;
+  border-top:4px solid var(--accent);
+  transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(130% 75% at 0% 0%,var(--accent-dim),transparent 60%)}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift)}
+.card.flash::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,212,0,.55) 50%,transparent 70%);
+  background-size:260% 100%;animation:sweep 1.1s var(--ease)}
+@keyframes sweep{from{background-position:180% 0}to{background-position:-90% 0}}
+.card.done{border-top-color:var(--filling);background:linear-gradient(180deg,#F5FDF9,#FFFFFF)}
+
+.card-top{display:flex;align-items:flex-start;gap:10px}
+.card-title{display:flex;flex-direction:column;gap:2px;min-width:0}
+.card-title h2{margin:0;font-size:14.5px;font-weight:800;letter-spacing:.13em;color:var(--ink)}
+.card-title span{font-size:11.5px;color:var(--ink-4);font-weight:600}
+.status{margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;
+  font-size:10.5px;font-weight:800;letter-spacing:.12em;border:1px solid var(--line);background:#F4F6F9;color:var(--ink-3);white-space:nowrap}
+.status i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.status[data-s="RUNNING"]{color:#04724F;border-color:rgba(0,164,106,.28);background:rgba(0,164,106,.10)}
+.status[data-s="RUNNING"] i{animation:pulse 2s var(--ease) infinite}
+.status[data-s="BREAK"]{color:#9A5A00;border-color:rgba(239,138,18,.3);background:rgba(239,138,18,.12)}
+.status[data-s="NO CAPACITY"]{color:var(--crit);border-color:rgba(224,51,59,.3);background:rgba(224,51,59,.09);animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{50%{background:rgba(224,51,59,.2)}}
+.status[data-s="COMPLETED"]{color:#fff;border-color:transparent;background:var(--filling)}
+.status[data-s="WAITING"]{color:var(--ink-3)}
+
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.hero .big{font-size:var(--fs-mega);font-weight:300;line-height:.9;letter-spacing:-.04em;color:var(--ink)}
+.hero .lbl{font-size:11px;letter-spacing:.14em;color:var(--ink-4);font-weight:700;margin-top:9px;display:block;text-transform:uppercase}
+.finishbox{text-align:right;min-width:118px}
+.finishbox .t{font-size:clamp(25px,2.2vw,36px);font-weight:700;line-height:1;letter-spacing:-.025em;color:var(--accent)}
+.finishbox .c{font-size:12.5px;color:var(--ink-3);margin-top:7px;font-weight:600}
+
+/* progress — live counting bars */
+.bar{position:relative;height:16px;border-radius:999px;background:#EAEEF3;overflow:hidden;box-shadow:inset 0 1px 2px rgba(16,24,40,.09)}
+.bar i{position:absolute;inset:0 auto 0 0;width:0%;border-radius:999px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,#ffffff),var(--accent));
+  box-shadow:0 0 18px -4px var(--accent);transition:width .85s var(--ease)}
+.bar.idle i::before{animation:none;opacity:.45}
+.bar i::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(115deg,rgba(255,255,255,.42) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.42) 50%,rgba(255,255,255,.42) 75%,transparent 75%);
+  background-size:22px 22px;animation:march .75s linear infinite}
+@keyframes march{to{background-position:22px 0}}
+.bar i::after{content:"";position:absolute;right:0;top:0;bottom:0;width:3px;background:#fff;opacity:.9;box-shadow:0 0 10px 2px rgba(255,255,255,.9)}
+.barrow{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--ink-3);font-weight:600;margin-bottom:7px}
+.barrow b{color:var(--ink);font-weight:800;font-size:15px}
+
+/* live minute ticker */
+.flow{display:flex;align-items:center;gap:11px;margin-top:11px}
+.flowbar{position:relative;flex:1;height:7px;border-radius:999px;background:#EAEEF3;overflow:hidden}
+.flowbar i{position:absolute;inset:0 auto 0 0;width:0%;border-radius:999px;background:var(--accent);opacity:.85}
+.flowlbl{font-size:11.5px;color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.flowlbl b{color:var(--accent);font-weight:800}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.stat{background:#fff;padding:12px 13px;display:flex;flex-direction:column;gap:3px;min-width:0;transition:background .3s var(--ease)}
+.stat:hover{background:#F7F9FC}
+.stat u{text-decoration:none;font-size:10px;letter-spacing:.13em;color:var(--ink-4);font-weight:800;text-transform:uppercase}
+.stat b{font-size:21px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.stat s{text-decoration:none;font-size:11px;color:var(--ink-4);font-weight:600}
+.stat.warn{background:rgba(239,138,18,.09)}
+.stat.warn b{color:var(--warn)}
+
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:9px}
+.stepper{display:flex;align-items:center;gap:8px;border:1px solid var(--line-hi);border-radius:14px;padding:5px 6px;background:#fff}
+.stepper button{appearance:none;width:36px;height:34px;border-radius:10px;border:1px solid var(--line);background:#F5F7FA;
+  color:var(--ink);font-size:19px;line-height:1;cursor:pointer;font-weight:600;transition:.18s var(--spring)}
+.stepper button:hover{background:var(--brand);border-color:#EFB800}
+.stepper button:active{transform:scale(.9)}
+.stepper span{flex:1;text-align:center;font-size:15px;font-weight:800}
+.addperson{background:linear-gradient(180deg,#00B978,#00A46A);border-color:#009060;color:#fff;font-weight:800;
+  box-shadow:0 10px 22px -12px rgba(0,164,106,1)}
+.addperson:hover{filter:brightness(1.05)}
+
+/* ============================================================
+   Panels
+   ============================================================ */
+.panel{padding:var(--pad)}
+.panel-head{display:flex;align-items:center;gap:12px;margin-bottom:15px;flex-wrap:wrap}
+.panel-head h2{margin:0;font-size:14.5px;font-weight:800;letter-spacing:.12em;color:var(--ink)}
+.panel-head .spacer{margin-left:auto}
+.rail{display:flex;gap:11px;overflow-x:auto;padding:4px 2px 14px;scrollbar-width:thin}
+.rail::-webkit-scrollbar{height:7px}
+.rail::-webkit-scrollbar-thumb{background:var(--line-hi);border-radius:99px}
+.chip{flex:none;min-width:158px;border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;background:#fff;
+  display:flex;flex-direction:column;gap:5px;position:relative;overflow:hidden;animation:rise .5s var(--ease) both;
+  transition:transform .28s var(--spring),box-shadow .28s var(--ease)}
+.chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.chip:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
+.chip .tm{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.chip .ds{font-size:12px;color:var(--ink-3);font-weight:600}
+.chip .tag{font-size:9.5px;letter-spacing:.12em;font-weight:800;color:var(--accent);text-transform:uppercase}
+.chip.now{background:linear-gradient(160deg,var(--brand),var(--brand-2));border-color:#EFB800}
+.chip.now::before{background:var(--brand-ink)}
+.chip.now .tag,.chip.now .ds{color:rgba(23,26,31,.72)}
+.chip.now .tm{color:var(--brand-ink)}
+.empty{color:var(--ink-4);font-size:13px;padding:10px 2px;font-weight:600}
+
+/* chart */
+.chartwrap{position:relative;width:100%;height:clamp(230px,27vh,360px)}
+.chartwrap svg{width:100%;height:100%;display:block;overflow:visible}
+.chartwrap.intro path{stroke-dasharray:4000;animation:trace 1.5s var(--ease) both}
+@keyframes trace{from{stroke-dashoffset:4000}to{stroke-dashoffset:0}}
+.tip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-115%);transition:opacity .16s var(--ease);
+  background:#fff;border:1px solid var(--line-hi);border-radius:16px;padding:11px 13px;font-size:12px;
+  box-shadow:var(--shadow-pop);min-width:180px;z-index:5}
+.tip h4{margin:0 0 8px;font-size:15px;font-weight:800}
+.tip div{display:flex;justify-content:space-between;gap:16px;color:var(--ink-3);padding:1.5px 0;font-weight:600}
+.tip div b{color:var(--ink);font-weight:800}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-3);font-weight:700}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:18px;height:4px;border-radius:2px;background:var(--accent)}
+
+/* log + what-if */
+.cols{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(12px,1.1vw,20px);align-items:start}
+.log{display:flex;flex-direction:column;max-height:400px;overflow-y:auto;padding-right:4px}
+.log::-webkit-scrollbar{width:7px}
+.log::-webkit-scrollbar-thumb{background:var(--line-hi);border-radius:99px}
+.entry{display:grid;grid-template-columns:auto auto 1fr;gap:14px;align-items:start;padding:12px 2px;border-bottom:1px solid var(--line-soft);
+  animation:rise .45s var(--ease) both}
+.entry:last-child{border-bottom:0}
+.entry .tm{font-size:13px;color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums;padding-top:6px;min-width:52px}
+.ico{width:32px;height:32px;border-radius:11px;border:1px solid var(--line);display:grid;place-items:center;background:var(--accent-dim,#F4F6F9);flex:none}
+.ico svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.entry .tx{min-width:0}
+.entry .tx b{display:block;font-size:13.5px;font-weight:700}
+.entry .tx span{font-size:12.5px;color:var(--ink-3);font-weight:600}
+
+.wi-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.wi-out{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.wi-box{border:1px solid var(--line);border-radius:var(--r-md);padding:14px;background:#fff}
+.wi-box u{text-decoration:none;font-size:10px;letter-spacing:.13em;color:var(--ink-4);font-weight:800;text-transform:uppercase}
+.wi-box b{display:block;font-size:29px;font-weight:700;margin-top:5px;letter-spacing:-.03em}
+.wi-delta{grid-column:1/-1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:14px;border:1px solid var(--line);background:#F7F9FC;color:var(--ink-3)}
+.wi-delta.good{color:#04724F;border-color:rgba(0,164,106,.3);background:rgba(0,164,106,.1);animation:rise .4s var(--ease)}
+.wi-delta.bad{color:var(--crit);border-color:rgba(224,51,59,.3);background:rgba(224,51,59,.08);animation:rise .4s var(--ease)}
+
+/* ============================================================
+   Modal + toast
+   ============================================================ */
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(23,30,42,.34);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+.scrim.open{opacity:1;pointer-events:auto}
+.modal{width:min(660px,100%);max-height:86vh;overflow-y:auto;padding:26px;border-radius:var(--r-xl);
+  background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-pop);
+  transform:scale(.94) translateY(14px);transition:transform .38s var(--spring)}
+.scrim.open .modal{transform:none}
+.modal h3{margin:0 0 5px;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.modal .sub{margin:0 0 20px;color:var(--ink-3);font-size:13.5px;font-weight:500;max-width:62ch}
+.modal .rowbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap}
+.modal .stack{display:flex;flex-direction:column;gap:14px}
+.evlist{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.evrow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);
+  border-radius:14px;padding:11px 13px;background:#F9FAFC;font-size:13px;font-weight:600;animation:rise .35s var(--ease) both}
+.evrow .t{font-weight:800;font-variant-numeric:tabular-nums}
+.evrow .d{color:var(--ink-3)}
+.evrow.past{opacity:.5}
+.xbtn{appearance:none;border:1px solid var(--line-hi);background:#fff;color:var(--ink-3);width:30px;height:30px;
+  border-radius:10px;cursor:pointer;font-size:16px;line-height:1;transition:.18s var(--spring)}
+.xbtn:hover{color:#fff;border-color:var(--crit);background:var(--crit);transform:scale(1.08)}
+
+.toasts{position:fixed;right:20px;bottom:calc(20px + var(--safe-b));z-index:95;display:flex;flex-direction:column;gap:11px;align-items:flex-end}
+.toast{min-width:260px;max-width:min(390px,90vw);padding:15px 17px;border-radius:19px;border:1px solid var(--line);
+  background:#fff;box-shadow:var(--shadow-pop);position:relative;overflow:hidden;
+  display:flex;gap:13px;align-items:flex-start;animation:tin .45s var(--spring)}
+.toast::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--ok)}
+.toast::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--brand);
+  transform-origin:left;animation:drain 3.2s linear forwards}
+@keyframes drain{to{transform:scaleX(0)}}
+.toast.err::before{background:var(--crit)}
+.toast.err::after{animation-duration:4.2s}
+.toast.out{animation:tout .35s var(--ease) forwards}
+@keyframes tin{from{opacity:0;transform:translateX(30px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tout{to{opacity:0;transform:translateX(24px) scale(.96)}}
+.toast b{display:block;font-size:13.5px;font-weight:800}
+.toast span{font-size:12.5px;color:var(--ink-3);font-weight:600}
+.toast .ico{border-color:rgba(0,164,106,.25);background:rgba(0,164,106,.1)}
+.toast .ico svg{stroke:var(--ok)}
+.toast.err .ico{border-color:rgba(224,51,59,.25);background:rgba(224,51,59,.08)}
+.toast.err .ico svg{stroke:var(--crit)}
+
+/* ============================================================
+   Fullscreen / control room
+   ============================================================ */
+.exitfs{position:fixed;top:calc(16px + var(--safe-t));right:16px;z-index:70;display:none}
+body.fs .exitfs{display:inline-flex}
+body.cr .setup,body.cr #panelChart,body.cr #panelLog,body.cr #panelWhatIf,body.cr #panelTimeline,body.cr #panelSim,
+body.cr .actions,body.cr .card-title span,body.cr .toolbar .btn:not(#btnControlRoom):not(#btnFullscreen){display:none!important}
+body.cr .board{flex:1;align-content:stretch}
+body.cr .shell{min-height:100vh;min-height:100dvh}
+body.cr .nextline{font-size:clamp(12px,1vw,18px);margin-top:14px}
+body.cr .shell{max-width:none;padding:clamp(10px,1vw,22px)}
+body.cr .board{gap:clamp(14px,1.4vw,28px)}
+body.cr .card{gap:clamp(16px,1.7vw,30px);padding:clamp(20px,1.9vw,38px);border-top-width:7px}
+body.cr .card:hover{transform:none}
+body.cr .hero .big{font-size:clamp(52px,7.8vw,136px)}
+body.cr .finishbox .t{font-size:clamp(32px,3.8vw,68px)}
+body.cr .finishbox .c{font-size:clamp(14px,1.2vw,21px)}
+body.cr .stat b{font-size:clamp(21px,2vw,36px)}
+body.cr .stat u{font-size:clamp(10px,.75vw,14px)}
+body.cr .bar{height:clamp(18px,1.6vw,30px)}
+body.cr .flowbar{height:clamp(8px,.8vw,14px)}
+body.cr .flowlbl{font-size:clamp(12px,1vw,18px)}
+body.cr .clock{font-size:clamp(36px,4.2vw,80px)}
+body.cr .card-title h2{font-size:clamp(16px,1.35vw,26px)}
+body.cr .barrow{font-size:clamp(12px,1vw,18px)}
+body.cr .barrow b{font-size:clamp(15px,1.2vw,22px)}
+body.cr .chip{min-width:190px}
+body.cr .status{font-size:clamp(10px,.85vw,15px);padding:9px 16px}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+/* Locus update sheet */
+.locus{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:#F9FAFC}
+.lrow{display:grid;grid-template-columns:1fr 150px;gap:14px;align-items:center;padding:13px 15px;border-bottom:1px solid var(--line)}
+.lrow label{font-size:12.5px;letter-spacing:.06em;font-weight:700;color:var(--ink-2);text-transform:uppercase}
+.lrow input{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink);
+  font:inherit;font-size:17px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;transition:.2s var(--ease)}
+.lrow input:focus{outline:none;border-color:var(--picking);box-shadow:0 0 0 4px rgba(29,111,242,.13)}
+.ltotal{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 15px;background:var(--brand)}
+.ltotal u{text-decoration:none;font-size:12px;letter-spacing:.14em;font-weight:800;color:rgba(23,26,31,.7);text-transform:uppercase}
+.ltotal b{font-size:clamp(26px,3.4vw,38px);font-weight:800;letter-spacing:-.03em;color:var(--brand-ink);font-variant-numeric:tabular-nums;
+  transition:transform .25s var(--spring)}
+.ltotal b.bump{transform:scale(1.07)}
+.lformula{font-size:12px;color:var(--ink-3);font-weight:600;padding:10px 15px;background:#fff;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.check{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--picking)}
+
+/* simulation panel */
+.verdict{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.vbox{border:1px solid var(--line);border-radius:var(--r-md);padding:14px 15px;background:#fff;position:relative;overflow:hidden}
+.vbox u{text-decoration:none;font-size:10px;letter-spacing:.13em;color:var(--ink-4);font-weight:800;text-transform:uppercase}
+.vbox b{display:block;font-size:clamp(22px,2.2vw,32px);font-weight:800;letter-spacing:-.03em;margin-top:5px;font-variant-numeric:tabular-nums}
+.vbox s{text-decoration:none;display:block;font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:3px}
+.vbox.ok{background:rgba(0,164,106,.08);border-color:rgba(0,164,106,.3)}
+.vbox.ok b{color:#04724F}
+.vbox.late{background:rgba(224,51,59,.07);border-color:rgba(224,51,59,.3)}
+.vbox.late b{color:var(--crit)}
+.vbox.hi{background:var(--brand);border-color:#EFB800}
+.vbox.hi u{color:rgba(23,26,31,.65)}
+.vbox.hi b,.vbox.hi s{color:var(--brand-ink)}
+.dlfield{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;color:var(--ink-3)}
+.dlfield input{padding:9px 11px;border-radius:11px;border:1.5px solid var(--line);background:#fff;font:inherit;font-size:14px;
+  font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dlfield input:focus{outline:none;border-color:var(--picking);box-shadow:0 0 0 4px rgba(29,111,242,.13)}
+
+.simtable{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:#fff}
+.simhead,.simrow{display:grid;grid-template-columns:96px minmax(150px,1.5fr) 64px 78px 92px 1.2fr;gap:12px;align-items:center;
+  padding:11px 15px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.simhead{background:#F4F6F9;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  font-weight:800;color:var(--ink-4)}
+.simrow{border-bottom:1px solid var(--line-soft);font-weight:600;animation:rise .4s var(--ease) both}
+.simrow:last-child{border-bottom:0}
+.simrow:hover{background:#F8FAFC}
+.simrow .tm{font-weight:800;color:var(--ink)}
+.simrow .what{color:var(--ink-2);display:flex;align-items:center;gap:8px}
+.simrow .pill{font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.pill.brk{background:rgba(239,138,18,.15);color:#8A5000}
+.pill.tr{background:rgba(0,164,106,.14);color:#04724F}
+.pill.ev{background:rgba(29,111,242,.12);color:#12489E}
+.pill.end{background:var(--brand);color:var(--brand-ink)}
+.simrow .stop{color:var(--crit);font-weight:800}
+.simbar{position:relative;height:9px;border-radius:999px;background:#EDF0F5;overflow:hidden}
+.simbar i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--accent);opacity:.9}
+.simrow .rem{display:flex;align-items:center;gap:10px}
+.simrow .rem span{min-width:66px;text-align:right;font-weight:800}
+.simnote{font-size:12px;color:var(--ink-3);font-weight:600;padding:12px 15px;background:#F9FAFC;border-top:1px solid var(--line)}
+
+/* next-change line + transfer note */
+.nextline{font-size:11.5px;color:var(--ink-3);font-weight:700;margin-top:9px;display:flex;align-items:center;gap:7px;min-height:17px}
+.nextline::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+.nextline.transfer{color:#04724F}
+.nextline.transfer::before{background:var(--filling);animation:pulse 2s var(--ease) infinite}
+.nextline.late{color:var(--crit)}
+.nextline.late::before{background:var(--crit)}
+.nextline.spare{color:#04724F}
+.nextline.spare::before{background:var(--filling)}
+
+@media (max-width:1180px){
+  .verdict{grid-template-columns:1fr 1fr}
+  .simhead{display:none}
+  .simrow{grid-template-columns:82px 1fr;gap:6px 12px}
+  .simrow .rem{grid-column:1/-1}
+  .board{grid-template-columns:1fr}
+  .cols{grid-template-columns:1fr}
+  .subgrid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .clockwrap{width:100%;margin-left:0;order:5;justify-content:space-between}
+  .top{flex-wrap:wrap}
+  .toolbar{width:100%;order:6}
+  .btn{flex:1;justify-content:center}
+  .stats{grid-template-columns:1fr 1fr}
+  .subgrid{grid-template-columns:1fr}
+  .hero{align-items:flex-start}
+  .finishbox{text-align:left}
+  .card:hover,.chip:hover,.setup-card:hover{transform:none}
+}
+@media (min-width:2000px){
+  .shell{max-width:2500px}
+  :root{--fs-md:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .card:hover,.chip:hover,.btn:hover,.setup-card:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="top glass" role="banner">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <h1>FLOWBOARD</h1>
+        <p>Live Warehouse Control</p>
+      </div>
+    </div>
+
+    <div class="live" id="livePill" title="Engine status"><i></i><span id="liveText">LIVE · CALCULATING</span></div>
+
+    <div class="clockwrap">
+      <div class="clock num" id="clock" aria-live="off">--:--<small>:--</small></div>
+      <div class="shiftbadge" id="shiftBadge">AM SHIFT</div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="btnControlRoom" aria-pressed="false" title="Enlarge everything for a warehouse monitor">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 20h8M12 17v3"/></svg>Numbers only</button>
+      <button class="btn primary" id="btnFullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg>Full screen</button>
+      <button class="btn danger" id="btnNewShiftTop"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4"/></svg>New shift</button>
+      <button class="btn" id="btnSettings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg>Settings</button>
+    </div>
+  </header>
+
+  <!-- ===================== SETUP ===================== -->
+  <section class="setup glass open" id="setup" aria-label="Shift setup">
+    <div class="setup-head">
+      <h2 id="setupTitle">Start the shift</h2>
+      <p id="setupSub">The boxes start empty on purpose. Set the shift window, then type today's opening workload, people and norm for each area — the greyed-out numbers are only a reminder of last time.</p>
+      <div class="spacer" style="margin-left:auto"></div>
+      <div class="seg" role="group" aria-label="Shift type">
+        <button data-shift="AM" aria-pressed="true">AM</button>
+        <button data-shift="PM" aria-pressed="false">PM</button>
+        <button data-shift="CUSTOM" aria-pressed="false">Custom</button>
+      </div>
+    </div>
+
+    <div class="grid-setup" style="margin-bottom:16px">
+      <div class="field"><label for="sStart">Shift start</label><input id="sStart" type="time" step="60" value="05:30"><em class="err">Enter a valid time.</em></div>
+      <div class="field"><label for="sEnd">Shift end</label><input id="sEnd" type="time" step="60" value="14:15"><em class="err">End must be after start.</em></div>
+      <div class="field" style="justify-content:flex-end"><label>&nbsp;</label>
+        <button class="btn wide" id="btnLoadBreaks"><svg viewBox="0 0 24 24"><path d="M4 7h11a4 4 0 0 1 0 8H4z"/><path d="M15 7h2.5a2.5 2.5 0 0 1 0 5H15M4 19h13"/></svg>Reload default breaks</button>
+      </div>
+      <div class="field" style="justify-content:flex-end"><label>&nbsp;</label>
+        <button class="btn primary wide" id="btnStartShift"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Start shift</button>
+      </div>
+    </div>
+
+    <div class="grid-setup" id="setupCards"></div>
+  </section>
+
+  <!-- ===================== BOARD ===================== -->
+  <main class="board" id="board" aria-label="Live operations"></main>
+
+  <!-- ===================== TIMELINE ===================== -->
+  <section class="panel glass" id="panelTimeline">
+    <div class="panel-head">
+      <h2>What's coming</h2>
+      <span class="meta" id="timelineHint">Breaks, staffing and norm changes ahead</span>
+      <div class="spacer"></div>
+      <button class="btn sm ghost" id="btnAddEventQuick"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Schedule a change</button>
+    </div>
+    <div class="rail" id="rail"></div>
+  </section>
+
+  <!-- ===================== SIMULATION ===================== -->
+  <section class="panel glass" id="panelSim">
+    <div class="panel-head">
+      <h2>Simulation</h2>
+      <div class="seg" id="simSeg" role="group" aria-label="Simulated area">
+        <button data-sp="filling" aria-pressed="true">Filling</button>
+        <button data-sp="picking" aria-pressed="false">Picking / KW</button>
+        <button data-sp="groot" aria-pressed="false">Groot</button>
+      </div>
+      <div class="spacer"></div>
+      <label class="dlfield" for="simDeadline">Must be finished by<input id="simDeadline" type="time" step="60"></label>
+      <button class="btn sm ghost" id="simDeadlineClear">Use shift end</button>
+    </div>
+    <div class="verdict" id="simVerdict"></div>
+    <div class="simtable" id="simTable"></div>
+  </section>
+
+  <!-- ===================== CHART ===================== -->
+  <section class="panel glass" id="panelChart">
+    <div class="panel-head">
+      <h2>Workload forecast</h2>
+      <div class="spacer"></div>
+      <div class="legend">
+        <span><i style="background:var(--picking)"></i>Picking / KW</span>
+        <span><i style="background:var(--groot)"></i>Picking Groot</span>
+        <span><i style="background:var(--filling)"></i>Filling</span>
+      </div>
+      <div class="seg" role="group" aria-label="Chart scale" style="margin-left:12px">
+        <button data-scale="abs" aria-pressed="true">Articles</button>
+        <button data-scale="rel" aria-pressed="false">% left</button>
+      </div>
+    </div>
+    <div class="chartwrap" id="chartWrap">
+      <svg id="chart" preserveAspectRatio="none" aria-label="Projected remaining workload over time"></svg>
+      <div class="tip" id="chartTip"></div>
+    </div>
+  </section>
+
+  <!-- ===================== LOG + WHAT IF ===================== -->
+  <div class="cols">
+    <section class="panel glass" id="panelLog">
+      <div class="panel-head">
+        <h2>Activity</h2>
+        <div class="spacer"></div>
+        <button class="btn sm ghost" id="btnExportJson">Export shift (JSON)</button>
+        <button class="btn sm ghost" id="btnExportCsv">Export CSV</button>
+        <button class="btn sm danger" id="btnNewShift">New shift</button>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <section class="panel glass" id="panelWhatIf">
+      <div class="panel-head">
+        <h2>What if</h2>
+        <span class="meta">Nothing changes until you apply</span>
+      </div>
+      <div class="wi-row">
+        <div class="seg" role="group" aria-label="What-if area" id="wiSeg">
+          <button data-p="picking" aria-pressed="true">Picking</button>
+          <button data-p="groot" aria-pressed="false">Groot</button>
+          <button data-p="filling" aria-pressed="false">Filling</button>
+        </div>
+      </div>
+      <div class="subgrid">
+        <div class="field"><label for="wiPeople">People change</label><input id="wiPeople" type="number" value="0" step="1"></div>
+        <div class="field"><label for="wiNorm">Norm from now</label><input id="wiNorm" type="number" placeholder="unchanged" min="0"></div>
+        <div class="field"><label for="wiBreak">Extra break (start–end)</label>
+          <div style="display:flex;gap:6px"><input id="wiBreakA" type="time" step="60"><input id="wiBreakB" type="time" step="60"></div>
+        </div>
+      </div>
+      <div class="wi-out">
+        <div class="wi-box"><u>Live forecast</u><b class="num" id="wiNow">--:--</b></div>
+        <div class="wi-box"><u>What-if forecast</u><b class="num" id="wiAlt">--:--</b></div>
+        <div class="wi-delta" id="wiDelta">Adjust a value to compare.</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn ghost" id="wiReset">Clear</button>
+        <button class="btn primary" id="wiApply" style="flex:1;justify-content:center">Apply changes</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<button class="btn exitfs" id="btnExitFs"><svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 20v-5h5M20 9h-5V4M4 15h5v5"/></svg>Exit full screen</button>
+
+<div class="scrim" id="scrim" role="dialog" aria-modal="true"><div class="modal glass" id="modal"></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+   FLOWBOARD
+   Standalone, offline, dependency-free warehouse workload control system.
+   Modules: Time · StorageManager · State · BreakEngine · StaffingEventManager
+            WorkloadSnapshotManager · CalculationEngine · ForecastEngine
+            FillingEngine · WorkforceFlowEngine · UIRenderer · AnimationEngine
+            ChartEngine · WhatIf · ExportManager · FullscreenManager · Toast · Modal
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- Time utils */
+const TZ = "Europe/Amsterdam";
+const DTF = new Intl.DateTimeFormat("en-GB", {
+  timeZone: TZ, hour12: false,
+  year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit", second: "2-digit"
+});
+const Time = {
+  parts(ts){
+    const o = {};
+    for (const p of DTF.formatToParts(ts)) if (p.type !== "literal") o[p.type] = +p.value;
+    if (o.hour === 24) o.hour = 0;
+    return o;
+  },
+  /** ms offset of the Amsterdam wall clock relative to UTC at instant ts */
+  offset(ts){
+    const p = Time.parts(ts);
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(ts / 1000) * 1000;
+  },
+  /** build an epoch ms from an Amsterdam wall-clock date/time (DST safe) */
+  make(y, m, d, H, M, S){
+    const guess = Date.UTC(y, m - 1, d, H, M, S || 0);
+    let ts = guess - Time.offset(guess);
+    ts = guess - Time.offset(ts);
+    return ts;
+  },
+  hm(ts){ const p = Time.parts(ts); return pad(p.hour) + ":" + pad(p.minute); },
+  hms(ts){ const p = Time.parts(ts); return pad(p.hour) + ":" + pad(p.minute) + ":" + pad(p.second); },
+  /** round to nearest minute for display, as the brief requires (22:06:56 -> 22:07) */
+  hmRounded(ts){ return Time.hm(Math.round(ts / 60000) * 60000); },
+  minOfDay(ts){ const p = Time.parts(ts); return p.hour * 60 + p.minute; },
+  today(){ const p = Time.parts(Date.now()); return { y: p.year, m: p.month, d: p.day }; },
+  parseHM(s){
+    if (typeof s !== "string") return null;
+    const m = s.match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    const H = +m[1], M = +m[2];
+    if (H > 23 || M > 59) return null;
+    return H * 60 + M;
+  },
+  fmtMin(mins){ return pad(Math.floor(mins / 60) % 24) + ":" + pad(mins % 60); }
+};
+function pad(n){ return String(n).padStart(2, "0"); }
+function nf(n){ return Math.round(n).toLocaleString("en-GB"); }
+function nf1(n){ return (Math.round(n * 10) / 10).toLocaleString("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+function uid(){ return Math.random().toString(36).slice(2, 10); }
+function durHMS(ms){
+  if (ms == null || !isFinite(ms) || ms < 0) return "--:--:--";
+  const s = Math.floor(ms / 1000);
+  return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
+}
+
+/* ---------------------------------------------------------------- Constants */
+const PROCS = [
+  { key: "picking", name: "PICKING / KW",  sub: "Kleingoed",   accent: "var(--picking)", dim: "var(--picking-dim)", hex: "#1D6FF2" },
+  { key: "groot",   name: "PICKING GROOT", sub: "Grootgoed",   accent: "var(--groot)",   dim: "var(--groot-dim)",   hex: "#7B45E8" },
+  { key: "filling", name: "FILLING",       sub: "Replenishment", accent: "var(--filling)", dim: "var(--filling-dim)", hex: "#00A46A" }
+];
+const PROC = Object.fromEntries(PROCS.map(p => [p.key, p]));
+const SHIFT_DEFAULTS = { AM: { start: "05:30", end: "14:15" }, PM: { start: "14:15", end: "23:00" }, CUSTOM: { start: "05:30", end: "14:15" } };
+const ICONS = {
+  workload: '<path d="M4 7h16M4 12h16M4 17h10"/><path d="M17 15l3 3 3-3" transform="translate(-3,1)"/>',
+  people:   '<circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M17 11h4M19 9v4"/>',
+  norm:     '<path d="M4 18V9M10 18V5M16 18v-6M22 18H2"/>',
+  brk:      '<path d="M4 7h11a4 4 0 0 1 0 8H4z"/><path d="M4 19h13M8 3v2M12 3v2"/>',
+  done:     '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  shift:    '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  event:    '<circle cx="12" cy="12" r="8.5"/><path d="M12 8v5M12 16h.01"/>',
+  flag:     '<path d="M5 21V4h9l-1.5 3.5L14 11H5"/>'
+};
+
+/* ---------------------------------------------------------------- Storage */
+const StorageManager = {
+  KEY: "flowboard.state.v1",
+  save(s){
+    try { localStorage.setItem(StorageManager.KEY, JSON.stringify(s)); } catch (e) { /* storage may be unavailable */ }
+  },
+  load(){
+    try {
+      const raw = localStorage.getItem(StorageManager.KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      return (s && s.v === 1 && s.processes) ? s : null;
+    } catch (e) { return null; }
+  },
+  clear(){ try { localStorage.removeItem(StorageManager.KEY); } catch (e) {} }
+};
+
+/* ---------------------------------------------------------------- Break defaults
+   A break entry stores the SHARE of the team that is away (0.5 = one group,
+   1 = whole team). Effective capacity factor = max(0, 1 - sum(active shares)).
+   This models overlapping group breaks correctly:
+     17:00-17:15  A away        -> 50% capacity
+     17:15-17:30  A + B away    ->  0% capacity
+     17:30-17:45  B away        -> 50% capacity                                */
+function defaultBreaks(shiftType, procKey){
+  const B = (name, start, end, away) => ({ id: uid(), name, start, end, away });
+  if (shiftType === "AM"){
+    const first = [B("Break 1 · Group A", "08:00", "08:15", .5), B("Break 1 · Group B", "08:15", "08:30", .5)];
+    if (procKey === "groot") return first.concat([B("Break 2 · Whole team", "11:15", "11:45", 1)]);
+    return first.concat([B("Break 2 · Group A", "11:15", "11:45", .5), B("Break 2 · Group B", "11:30", "12:00", .5)]);
+  }
+  if (shiftType === "PM"){
+    return [
+      B("Break 1 · Group A", "17:00", "17:30", .5),
+      B("Break 1 · Group B", "17:15", "17:45", .5),
+      B("Break 2 · Whole team", "20:00", "20:15", 1)
+    ];
+  }
+  return [];
+}
+
+/* ---------------------------------------------------------------- State */
+let state = null;
+let dirtyVersion = 0;
+function touch(){ dirtyVersion++; StorageManager.save(state); }
+
+function freshProcess(key, people, norm){
+  return {
+    key,
+    basePeople: people,
+    baseNorm: norm,
+    baseline: 0,                 // largest workload seen this shift -> progress reference
+    snapshots: [],               // [{ t, remaining }]  authoritative measurements
+    events: [],                  // [{ id, t, peopleDelta, peopleSet, norm }]
+    breaks: [],
+    deadline: null               // "HH:MM"; null = the end of the shift
+  };
+}
+/* Workforce transfer configuration: who moves to Filling when they finish */
+function defaultFlow(){
+  return {
+    enabled: true,
+    sources: {
+      picking: { share: 1, delayMin: 10 },
+      groot:   { share: 1, delayMin: 10 }
+    },
+    logged: []
+  };
+}
+function freshState(type){
+  type = type || "AM";
+  const d = SHIFT_DEFAULTS[type];
+  const today = Time.today();
+  const s = {
+    v: 1,
+    shift: { type, start: d.start, end: d.end, day: today, startedAt: null },
+    ui: { controlRoom: false, chartScale: "abs", locusHalf: false },
+    flow: defaultFlow(),
+    processes: {
+      picking: freshProcess("picking", 48, 270),
+      groot:   freshProcess("groot", 12, 220),
+      filling: freshProcess("filling", 8, 180)
+    },
+    draft: { picking: { workload: 69072, people: 48, norm: 270 }, groot: { workload: 18000, people: 12, norm: 220 }, filling: { workload: 12000, people: 8, norm: 180 } },
+    log: []
+  };
+  for (const p of PROCS) s.processes[p.key].breaks = defaultBreaks(type, p.key);
+  return s;
+}
+
+/* Shift window as epoch ms (handles shifts crossing midnight).
+   Memoised: the engine asks for it thousands of times per forecast pass. */
+let _swCache = null, _swVer = -1, _hmCache = new Map(), _hmVer = -1;
+function shiftWindow(){
+  if (_swVer === dirtyVersion && _swCache) return _swCache;
+  _swCache = computeShiftWindow();
+  _swVer = dirtyVersion;
+  return _swCache;
+}
+function computeShiftWindow(){
+  const { day, start, end } = state.shift;
+  const sm = Time.parseHM(start) ?? 330, em = Time.parseHM(end) ?? 855;
+  const s = Time.make(day.y, day.m, day.d, Math.floor(sm / 60), sm % 60, 0);
+  let e = Time.make(day.y, day.m, day.d, Math.floor(em / 60), em % 60, 0);
+  if (e <= s) e += 864e5;
+  return { start: s, end: e };
+}
+/** resolve an "HH:MM" break edge onto the shift day, rolling past midnight */
+function resolveOnShiftDay(hm){
+  if (_hmVer !== dirtyVersion){ _hmCache = new Map(); _hmVer = dirtyVersion; }
+  if (_hmCache.has(hm)) return _hmCache.get(hm);
+  const w = shiftWindow();
+  const mins = Time.parseHM(hm);
+  let ts = null;
+  if (mins != null){
+    const { day } = state.shift;
+    ts = Time.make(day.y, day.m, day.d, Math.floor(mins / 60), mins % 60, 0);
+    while (ts < w.start - 6 * 3600e3) ts += 864e5;
+  }
+  _hmCache.set(hm, ts);
+  return ts;
+}
+
+/** the moment a process must be finished by (its own deadline, else shift end) */
+function deadlineOf(key){
+  const sc = state.processes[key];
+  if (sc && sc.deadline){
+    const ts = resolveOnShiftDay(sc.deadline);
+    if (ts != null) return ts;
+  }
+  return shiftWindow().end;
+}
+
+/* ---------------------------------------------------------------- Break engine */
+const BreakEngine = {
+  resolved(sc){
+    if (sc._rbV === dirtyVersion && sc._rb) return sc._rb;
+    const out = [];
+    for (const b of sc.breaks){
+      const s = resolveOnShiftDay(b.start), e = resolveOnShiftDay(b.end);
+      if (s == null || e == null || e <= s) continue;
+      out.push({ s, e, away: clamp(+b.away || 0, 0, 1), name: b.name });
+    }
+    if (sc._extraBreak) out.push(sc._extraBreak);
+    sc._rb = out; sc._rbV = dirtyVersion;
+    return out;
+  },
+  factorAt(sc, t){
+    let away = 0;
+    for (const b of BreakEngine.resolved(sc)) if (t >= b.s && t < b.e) away += b.away;
+    return clamp(1 - away, 0, 1);
+  },
+  activeAt(sc, t){
+    return BreakEngine.resolved(sc).filter(b => t >= b.s && t < b.e);
+  }
+};
+
+/* ---------------------------------------------------------------- Staffing events */
+const StaffingEventManager = {
+  sorted(sc){
+    if (sc._evV === dirtyVersion && sc._ev) return sc._ev;
+    sc._ev = sc.events.slice().sort((a, b) => a.t - b.t);
+    sc._evV = dirtyVersion;
+    return sc._ev;
+  },
+  peopleAt(sc, t){
+    let p = sc.basePeople;
+    for (const e of StaffingEventManager.sorted(sc)){
+      if (e.t > t) break;
+      if (e.peopleSet != null) p = e.peopleSet;
+      if (e.peopleDelta) p += e.peopleDelta;
+    }
+    return Math.max(0, Math.round(p));
+  },
+  normAt(sc, t){
+    let n = sc.baseNorm;
+    for (const e of StaffingEventManager.sorted(sc)){
+      if (e.t > t) break;
+      if (e.norm != null) n = e.norm;
+    }
+    return Math.max(0, n);
+  },
+  add(sc, ev){
+    sc.events.push(Object.assign({ id: uid(), peopleDelta: 0, peopleSet: null, norm: null }, ev));
+    sc._evV = -1;                                  // invalidate before the next read
+  },
+  upcoming(sc, from){ return StaffingEventManager.sorted(sc).filter(e => e.t >= from); }
+};
+
+/* ---------------------------------------------------------------- Snapshots */
+const WorkloadSnapshotManager = {
+  add(sc, t, remaining, parts){
+    sc.snapshots.push({ t, remaining: Math.max(0, remaining), parts: parts || null });
+    sc.snapshots.sort((a, b) => a.t - b.t);
+    sc.baseline = Math.max(sc.baseline || 0, remaining);
+  },
+  latestAt(sc, t){
+    let best = null;
+    for (const s of sc.snapshots) if (s.t <= t && (!best || s.t >= best.t)) best = s;
+    return best || sc.snapshots[0] || null;
+  }
+};
+
+/* ---------------------------------------------------------------- Calculation engine
+   Everything downstream of here is deterministic and event-driven:
+   production is integrated segment by segment between event boundaries,
+   never retro-applied to history.                                             */
+const CalculationEngine = {
+  /** articles per second */
+  rateAt(sc, t){
+    if (t < shiftWindow().start) return 0;         // nobody is picking before the shift opens
+    return StaffingEventManager.peopleAt(sc, t) * StaffingEventManager.normAt(sc, t) * BreakEngine.factorAt(sc, t) / 3600;
+  },
+  effectivePeopleAt(sc, t){
+    return StaffingEventManager.peopleAt(sc, t) * BreakEngine.factorAt(sc, t);
+  },
+  /** every instant where people / norm / break capacity can change */
+  boundaries(sc){
+    const set = new Set();
+    set.add(shiftWindow().start);
+    for (const e of sc.events) set.add(e.t);
+    for (const b of BreakEngine.resolved(sc)){ set.add(b.s); set.add(b.e); }
+    for (const s of sc.snapshots) set.add(s.t);
+    return Array.from(set).sort((a, b) => a - b);
+  },
+  nextBoundary(bounds, t){
+    for (let i = 0; i < bounds.length; i++) if (bounds[i] > t) return bounds[i];
+    return Infinity;
+  },
+  /** integrate production from `from` to `to`, starting at `remaining` */
+  simulate(sc, from, to, remaining, bounds){
+    bounds = bounds || CalculationEngine.boundaries(sc);
+    let t = from, rem = remaining;
+    let guard = 0;
+    while (t < to && rem > 0 && guard++ < 5000){
+      const next = Math.min(to, CalculationEngine.nextBoundary(bounds, t));
+      const rate = CalculationEngine.rateAt(sc, t);
+      rem = Math.max(0, rem - rate * (next - t) / 1000);
+      t = next;
+    }
+    return rem;
+  },
+  /** authoritative remaining workload at instant t */
+  remainingAt(sc, t){
+    const snap = WorkloadSnapshotManager.latestAt(sc, t);
+    if (!snap) return 0;
+    if (t <= snap.t) return snap.remaining;
+    return CalculationEngine.simulate(sc, snap.t, t, snap.remaining);
+  },
+  /** the exact moment the workload hits zero, honouring every future event */
+  finishFrom(sc, t0, rem0){
+    let t = t0, rem = rem0;
+    if (rem <= 0) return t0;
+    const bounds = CalculationEngine.boundaries(sc);
+    const horizon = t0 + 36 * 3600e3;
+    let guard = 0;
+    while (t < horizon && guard++ < 5000){
+      const next = CalculationEngine.nextBoundary(bounds, t);
+      const rate = CalculationEngine.rateAt(sc, t);
+      const spanEnd = Math.min(next === Infinity ? horizon : next, horizon);
+      if (rate > 0){
+        const needMs = rem / rate * 1000;
+        if (t + needMs <= spanEnd) return t + needMs;
+        rem -= rate * (spanEnd - t) / 1000;
+      }
+      if (next === Infinity) return null;   // rate is 0 forever from here
+      t = next;
+    }
+    return null;
+  },
+  finishAt(sc, t){ return CalculationEngine.finishFrom(sc, t, CalculationEngine.remainingAt(sc, t)); },
+  /** what changes at this exact instant — used to label the simulation */
+  markerAt(sc, t){
+    for (const e of StaffingEventManager.sorted(sc)){
+      if (e.t !== t) continue;
+      if (e.transferFrom) return { cls: "tr", text: "+" + e.peopleDelta + " people arrive from " + PROC[e.transferFrom].name };
+      const bits = [];
+      if (e.peopleSet != null) bits.push("people set to " + e.peopleSet);
+      if (e.peopleDelta) bits.push((e.peopleDelta > 0 ? "+" : "") + e.peopleDelta + " people");
+      if (e.norm != null) bits.push("norm to " + e.norm + "/h");
+      return { cls: "ev", text: bits.join(" · ") || "change" };
+    }
+    for (const b of BreakEngine.resolved(sc)){
+      if (b.s === t) return { cls: "brk", text: b.name + " starts" };
+      if (b.e === t) return { cls: "brk", text: b.name + " ends" };
+    }
+    if (t === shiftWindow().start) return { cls: "ev", text: "shift starts" };
+    return { cls: "", text: "" };
+  },
+  /** the forecast written out segment by segment, exactly as the engine walks it */
+  breakdown(sc, from, to, maxRows){
+    const bounds = CalculationEngine.boundaries(sc);
+    const marks = [from];
+    for (const b of bounds) if (b > from && b < to) marks.push(b);
+    marks.sort((a, b) => a - b);
+    const rows = [];
+    let rem = CalculationEngine.remainingAt(sc, from);
+    for (let i = 0; i < marks.length && rows.length < (maxRows || 60); i++){
+      const t0 = marks[i];
+      const t1 = Math.min(i + 1 < marks.length ? marks[i + 1] : to, to);
+      if (t1 <= t0) continue;
+      const people = StaffingEventManager.peopleAt(sc, t0);
+      const norm = StaffingEventManager.normAt(sc, t0);
+      const factor = BreakEngine.factorAt(sc, t0);
+      const rate = CalculationEngine.rateAt(sc, t0);
+      let end = t1, produced, cleared = false;
+      if (rate > 0 && rem > 0 && rem / rate * 1000 <= t1 - t0){
+        end = t0 + rem / rate * 1000; produced = rem; cleared = true;
+      } else {
+        produced = rate * (t1 - t0) / 1000;
+      }
+      const remEnd = Math.max(0, rem - produced);
+      rows.push({
+        t0, t1: end, people, norm, factor, ratePerMin: rate * 60,
+        produced, remStart: rem, remEnd, cleared,
+        marker: CalculationEngine.markerAt(sc, t0)
+      });
+      rem = remEnd;
+      if (cleared) break;
+    }
+    return rows;
+  },
+  /** smallest number of extra people, added now, that still makes the deadline */
+  peopleNeededFor(sc, now, deadline, maxExtra){
+    const rem = CalculationEngine.remainingAt(sc, now);
+    if (rem <= 0) return 0;
+    const test = n => {
+      const c = {
+        key: sc.key, basePeople: sc.basePeople, baseNorm: sc.baseNorm, baseline: sc.baseline,
+        snapshots: sc.snapshots, breaks: sc.breaks, _extraBreak: sc._extraBreak || null,
+        events: sc.events.concat([{ id: "probe", t: now, peopleDelta: n, peopleSet: null, norm: null }])
+      };
+      const f = CalculationEngine.finishFrom(c, now, rem);
+      return f != null && f <= deadline;
+    };
+    let lo = 1, hi = maxExtra || 300;
+    if (!test(hi)) return null;
+    while (lo < hi){
+      const mid = Math.floor((lo + hi) / 2);
+      if (test(mid)) hi = mid; else lo = mid + 1;
+    }
+    return lo;
+  },
+  statusAt(sc, t){
+    const w = shiftWindow();
+    const rem = CalculationEngine.remainingAt(sc, t);
+    if (!sc.snapshots.length) return "WAITING";
+    if (rem <= 0.5) return "COMPLETED";
+    if (t < w.start) return "WAITING";
+    const people = StaffingEventManager.peopleAt(sc, t);
+    if (people <= 0) return "NO CAPACITY";
+    if (BreakEngine.factorAt(sc, t) <= 0) return "BREAK";
+    return "RUNNING";
+  }
+};
+
+/* ---------------------------------------------------------------- Filling engine
+   Filling is deliberately independent today. It reuses the shared calculation
+   engine and exposes the seams the workforce-transfer rules will plug into.   */
+const FillingEngine = {
+  capacityAt(t){ return CalculationEngine.rateAt(fillingScenario(), t) * 60; },
+  addPerson(n){
+    const sc = state.processes.filling, t = Date.now();
+    const before = StaffingEventManager.peopleAt(sc, t);
+    StaffingEventManager.add(sc, { t, peopleDelta: n });
+    const after = StaffingEventManager.peopleAt(sc, t);
+    Log.add("people", "filling", (n > 0 ? "Filling +" : "Filling ") + n + " person", before + " → " + after + " people", t);
+    touch(); UIRenderer.flash("filling");
+    Toast.show(n > 0 ? "Person added" : "Person removed", "Filling · " + before + " → " + after + " people");
+  }
+};
+
+/* ---------------------------------------------------------------- Workforce flow engine
+   PLACEHOLDER BY DESIGN. The Picking -> Filling transfer rules are not
+   finalised, so nothing is moved automatically. When the real Excel rules
+   arrive, implement the three functions below and Filling's capacity,
+   forecast, timeline and chart pick the change up with no other edits.        */
+const WorkforceFlowEngine = {
+  /** the moment a process clears its workload, from its own latest measurement */
+  finishOf(processKey){
+    const sc = state.processes[processKey];
+    if (!sc || !sc.snapshots.length) return null;
+    const snap = sc.snapshots[sc.snapshots.length - 1];
+    return CalculationEngine.finishFrom(sc, snap.t, snap.remaining);
+  },
+  /** every scheduled hand-over of people into Filling */
+  transfers(){
+    const out = [];
+    const flow = state.flow;
+    if (!flow || !flow.enabled) return out;
+    for (const src of ["picking", "groot"]){
+      const cfg = flow.sources[src];
+      if (!cfg || cfg.share <= 0) continue;
+      const fin = WorkforceFlowEngine.finishOf(src);
+      if (fin == null) continue;
+      const people = Math.floor(StaffingEventManager.peopleAt(state.processes[src], fin) * cfg.share);
+      if (people <= 0) continue;
+      out.push({ from: src, finish: fin, at: fin + (cfg.delayMin || 0) * 60000, people });
+    }
+    return out.sort((a, b) => a.at - b.at);
+  },
+  /** people released by a finished process at `timestamp` */
+  getAvailableWorkers(processKey, timestamp){
+    const fin = WorkforceFlowEngine.finishOf(processKey);
+    if (fin == null || timestamp < fin) return 0;
+    return StaffingEventManager.peopleAt(state.processes[processKey], fin);
+  },
+  /** who is already inside Filling at `timestamp` */
+  allocateWorkersToFilling(timestamp){
+    return WorkforceFlowEngine.transfers().filter(t => t.at <= timestamp);
+  },
+  calculateFillingCapacity(timestamp){
+    return CalculationEngine.rateAt(fillingScenario(), timestamp) * 60;
+  },
+  transferredPeopleAt(timestamp){
+    return WorkforceFlowEngine.allocateWorkersToFilling(timestamp).reduce((n, t) => n + t.people, 0);
+  }
+};
+
+/* Filling is calculated on a derived scenario: its own staffing plus the
+   people handed over by Picking and Groot when they clear their workload.
+   Picking and Groot never depend on Filling, so there is no circular maths. */
+let _flowSc = null, _flowV = -1;
+function fillingScenario(){
+  if (_flowV === dirtyVersion && _flowSc) return _flowSc;
+  const sc = state.processes.filling;
+  const c = {
+    key: "filling", basePeople: sc.basePeople, baseNorm: sc.baseNorm, baseline: sc.baseline,
+    snapshots: sc.snapshots, events: sc.events.slice(), breaks: sc.breaks, _extraBreak: null
+  };
+  for (const tr of WorkforceFlowEngine.transfers()){
+    c.events.push({ id: "tr-" + tr.from, t: tr.at, peopleDelta: tr.people, peopleSet: null, norm: null, transferFrom: tr.from });
+  }
+  _flowSc = c; _flowV = dirtyVersion;
+  return c;
+}
+/** read-scenario for a process (Filling gets the transfer-aware one) */
+function SC(key){ return key === "filling" ? fillingScenario() : state.processes[key]; }
+</script>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------------- Toast */
+const Toast = {
+  show(title, detail, kind){
+    const el = document.createElement("div");
+    el.className = "toast" + (kind === "err" ? " err" : "");
+    el.innerHTML = '<span class="ico"><svg viewBox="0 0 24 24">' +
+      (kind === "err" ? ICONS.event : ICONS.done) + '</svg></span><div><b></b><span></span></div>';
+    el.querySelector("b").textContent = title;
+    el.querySelector("span:last-child").textContent = detail || "";
+    document.getElementById("toasts").appendChild(el);
+    setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 400); }, kind === "err" ? 4200 : 3200);
+  }
+};
+
+/* ---------------------------------------------------------------- Modal */
+const Modal = {
+  el: null, scrim: null, onClose: null,
+  init(){
+    Modal.scrim = document.getElementById("scrim");
+    Modal.el = document.getElementById("modal");
+    Modal.scrim.addEventListener("mousedown", e => { if (e.target === Modal.scrim) Modal.close(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && Modal.scrim.classList.contains("open")) Modal.close(); });
+  },
+  open(html, after){
+    Modal.el.innerHTML = html;
+    Modal.scrim.classList.add("open");
+    if (after) after(Modal.el);
+    const f = Modal.el.querySelector("input,select,button.primary");
+    if (f) setTimeout(() => f.focus(), 60);
+  },
+  close(){ Modal.scrim.classList.remove("open"); }
+};
+function fieldHTML(id, label, type, value, attrs){
+  return '<div class="field" id="f-' + id + '"><label for="' + id + '">' + label + '</label>' +
+    '<input id="' + id + '" type="' + type + '" value="' + (value ?? "") + '" ' + (attrs || "") + '>' +
+    '<em class="err"></em></div>';
+}
+function setErr(id, msg){
+  const f = document.getElementById("f-" + id);
+  if (!f) return;
+  f.classList.toggle("invalid", !!msg);
+  if (msg) f.querySelector(".err").textContent = msg;
+}
+
+/* ---------------------------------------------------------------- Activity log */
+const Log = {
+  add(type, procKey, title, detail, t){
+    state.log.unshift({ id: uid(), t: t || Date.now(), type, proc: procKey || null, title, detail: detail || "" });
+    if (state.log.length > 400) state.log.length = 400;
+    UIRenderer.renderLog();
+  },
+  icon(type){
+    return ICONS[type] || ICONS.event;
+  }
+};
+
+/* ---------------------------------------------------------------- UI renderer */
+const UIRenderer = {
+  refs: {},
+  buildSetup(){
+    const wrap = document.getElementById("setupCards");
+    wrap.innerHTML = PROCS.map(p => (
+      '<div class="setup-card" style="--accent:' + p.accent + '">' +
+        '<h3><span class="dot"></span>' + p.name + '</h3>' +
+        '<div class="stack" style="display:flex;flex-direction:column;gap:11px">' +
+          '<div class="field"><label for="su-w-' + p.key + '">Workload (articles)</label><input id="su-w-' + p.key + '" type="number" min="0" step="1" inputmode="numeric" autocomplete="off"><em class="err"></em></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+            '<div class="field"><label for="su-p-' + p.key + '">People</label><input id="su-p-' + p.key + '" type="number" min="0" step="1" inputmode="numeric" autocomplete="off"><em class="err"></em></div>' +
+            '<div class="field"><label for="su-n-' + p.key + '">Norm / hour</label><input id="su-n-' + p.key + '" type="number" min="0" step="1" inputmode="numeric" autocomplete="off"><em class="err"></em></div>' +
+          '</div>' +
+          '<div class="field"><label>Breaks loaded</label><div class="meta" id="su-b-' + p.key + '" style="padding-top:4px"></div></div>' +
+        '</div>' +
+      '</div>'
+    )).join("");
+    UIRenderer.syncSetup();
+  },
+  syncSetup(){
+    document.getElementById("sStart").value = state.shift.start;
+    document.getElementById("sEnd").value = state.shift.end;
+    document.querySelectorAll("[data-shift]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.shift === state.shift.type)));
+    for (const p of PROCS){
+      const d = state.draft[p.key], sc = state.processes[p.key];
+      const w = document.getElementById("su-w-" + p.key); if (!w) continue;
+      w.placeholder = nf(d.workload);
+      document.getElementById("su-p-" + p.key).placeholder = d.people;
+      document.getElementById("su-n-" + p.key).placeholder = d.norm;
+      document.getElementById("su-b-" + p.key).textContent = sc.breaks.length ? sc.breaks.length + " breaks · " + sc.breaks.map(b => b.start).join(" · ") : "none";
+    }
+    document.getElementById("shiftBadge").textContent = state.shift.type + " SHIFT";
+  },
+  buildBoard(){
+    const board = document.getElementById("board");
+    board.innerHTML = PROCS.map(p => {
+      const extra = p.key === "filling"
+        ? '<button class="btn addperson" data-act="add1" data-p="filling" style="grid-column:span 2"><svg viewBox="0 0 24 24">' + ICONS.people + '</svg>Add person</button>' +
+          '<button class="btn" data-act="flow" data-p="filling" style="grid-column:span 2">Hand-over from picking…</button>'
+        : "";
+      return '<article class="card glass" id="card-' + p.key + '" style="--accent:' + p.accent + ';--accent-dim:' + p.dim + '">' +
+        '<div class="card-top">' +
+          '<div class="card-title"><h2>' + p.name + '</h2><span>' + p.sub + '</span></div>' +
+          '<div class="status" data-s="WAITING"><i></i><span data-f="status">WAITING</span></div>' +
+        '</div>' +
+        '<div class="hero">' +
+          '<div><div class="big num" data-f="remaining">0</div><span class="lbl">Articles remaining</span></div>' +
+          '<div class="finishbox"><div class="t num" data-f="finish">--:--</div><div class="c num" data-f="countdown">--:--:--</div></div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="barrow"><span data-f="doneOf">–</span><b class="num" data-f="pct">0%</b></div>' +
+          '<div class="bar"><i data-f="bar"></i></div>' +
+          '<div class="flow"><div class="flowbar"><i data-f="flow"></i></div>' +
+            '<span class="flowlbl"><b data-f="flowNum">0</b> <span data-f="flowLbl">picked this minute</span></span></div>' +
+          '<div class="nextline" data-f="next"></div>' +
+          '<div class="nextline" data-f="deadline"></div>' +
+        '</div>' +
+        '<div class="stats">' +
+          '<div class="stat"><u>People</u><b class="num" data-f="people">0</b><s data-f="effective">–</s></div>' +
+          '<div class="stat"><u>Norm</u><b class="num" data-f="norm">0</b><s>articles / hour</s></div>' +
+          '<div class="stat"><u>Capacity</u><b class="num" data-f="rate">0</b><s>articles / min</s></div>' +
+          '<div class="stat"><u>Picked</u><b class="num" data-f="produced">0</b><s data-f="pickedSub">this shift</s></div>' +
+        '</div>' +
+        '<div class="actions">' +
+          '<button class="btn primary" data-act="update" data-p="' + p.key + '" style="grid-column:span 2"><svg viewBox="0 0 24 24">' + ICONS.workload + '</svg>Update workload</button>' +
+          '<div class="stepper" style="grid-column:span 2"><button data-act="minus1" data-p="' + p.key + '" aria-label="One person fewer">−</button>' +
+            '<span class="num" data-f="stepPeople">0</span><button data-act="plus1" data-p="' + p.key + '" aria-label="One person more">+</button></div>' +
+          '<button class="btn" data-act="people" data-p="' + p.key + '">People…</button>' +
+          '<button class="btn" data-act="norm" data-p="' + p.key + '">Norm…</button>' +
+          '<button class="btn" data-act="events" data-p="' + p.key + '">Schedule</button>' +
+          '<button class="btn" data-act="breaks" data-p="' + p.key + '">Breaks</button>' +
+          extra +
+        '</div>' +
+      '</article>';
+    }).join("");
+    UIRenderer.refs = {};
+    for (const p of PROCS){
+      const card = document.getElementById("card-" + p.key);
+      const r = { card, f: {} };
+      card.querySelectorAll("[data-f]").forEach(el => r.f[el.dataset.f] = el);
+      r.status = card.querySelector(".status");
+      UIRenderer.refs[p.key] = r;
+    }
+    board.addEventListener("click", UIRenderer.onAction);
+  },
+  onAction(e){
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const key = b.dataset.p, act = b.dataset.act;
+    if (act === "update") Actions.updateWorkload(key);
+    else if (act === "people") Actions.changePeople(key);
+    else if (act === "norm") Actions.changeNorm(key);
+    else if (act === "events") Actions.futureChanges(key);
+    else if (act === "breaks") Actions.editBreaks(key);
+    else if (act === "plus1") Actions.stepPeople(key, 1);
+    else if (act === "minus1") Actions.stepPeople(key, -1);
+    else if (act === "add1") FillingEngine.addPerson(1);
+    else if (act === "flow") Actions.flowSettings();
+  },
+  flash(key){
+    const r = UIRenderer.refs[key]; if (!r) return;
+    r.card.classList.remove("flash"); void r.card.offsetWidth; r.card.classList.add("flash");
+  },
+  renderLog(){
+    const el = document.getElementById("log");
+    if (!state.log.length){ el.innerHTML = '<p class="empty">No activity yet. Start the shift to begin recording.</p>'; return; }
+    el.innerHTML = state.log.slice(0, 80).map(e => {
+      const accent = e.proc ? PROC[e.proc].accent : "var(--brand-2)";
+      const dim = e.proc ? PROC[e.proc].dim : "rgba(255,212,0,.22)";
+      return '<div class="entry"><span class="tm num">' + Time.hm(e.t) + '</span>' +
+        '<span class="ico" style="--accent:' + accent + ';--accent-dim:' + dim + '"><svg viewBox="0 0 24 24">' + Log.icon(e.type) + '</svg></span>' +
+        '<span class="tx"><b></b><span></span></span></div>';
+    }).join("");
+    const entries = el.querySelectorAll(".entry");
+    state.log.slice(0, 80).forEach((e, i) => {
+      entries[i].querySelector(".tx b").textContent = e.title;
+      entries[i].querySelector(".tx span").textContent = e.detail;
+    });
+  },
+  renderRail(now){
+    const rail = document.getElementById("rail");
+    const items = [];
+    for (const p of PROCS){
+      const sc = SC(p.key);
+      for (const e of StaffingEventManager.upcoming(sc, now)){
+        items.push({ t: e.t, tag: p.name, desc: describeEvent(e), accent: p.accent, type: e.transferFrom ? "people" : "event" });
+      }
+      for (const b of BreakEngine.resolved(sc)){
+        if (b.e <= now) continue;
+        const running = b.s <= now;
+        items.push({
+          t: running ? b.e : b.s,
+          tag: p.name,
+          desc: (running ? "ends · " : "") + b.name + " · " + Math.round((1 - b.away) * 100) + "% capacity",
+          accent: p.accent, type: "brk"
+        });
+      }
+      const fin = Metrics.cache[p.key] && Metrics.cache[p.key].finish;
+      if (fin && fin > now) items.push({ t: fin, tag: p.name, desc: "projected finish", accent: p.accent, type: "flag" });
+    }
+    const w = shiftWindow();
+    if (w.end > now) items.push({ t: w.end, tag: "SHIFT", desc: "shift ends", accent: "var(--ink-2)", type: "shift" });
+    items.sort((a, b) => a.t - b.t);
+    const head = '<div class="chip now"><span class="tag">NOW</span><span class="tm num">' + Time.hm(now) + '</span><span class="ds">' + state.shift.type + ' shift · ' + Time.hm(w.start) + '–' + Time.hm(w.end) + '</span></div>';
+    const rest = items.slice(0, 14).map(i =>
+      '<div class="chip" style="--accent:' + i.accent + '"><span class="tag">' + i.tag + '</span>' +
+      '<span class="tm num">' + Time.hm(i.t) + '</span><span class="ds">' + i.desc + '</span></div>').join("");
+    rail.innerHTML = head + (rest || '<div class="chip"><span class="tag">CLEAR</span><span class="tm num">—</span><span class="ds">no changes scheduled</span></div>');
+  }
+};
+
+/** one-line summary of the next thing that changes this process's capacity */
+function describeEvent(e){
+  if (e.transferFrom) return "+" + e.peopleDelta + " from " + PROC[e.transferFrom].name;
+  const bits = [];
+  if (e.peopleSet != null) bits.push("people to " + e.peopleSet);
+  if (e.peopleDelta) bits.push((e.peopleDelta > 0 ? "+" : "") + e.peopleDelta + " people");
+  if (e.norm != null) bits.push("norm to " + e.norm + "/h");
+  return bits.join(" · ") || "change";
+}
+function nextChangeFor(key, now){
+  const m = Metrics.cache[key];
+  if (key !== "filling" && m && m.status === "COMPLETED"){
+    const tr = WorkforceFlowEngine.transfers().find(t => t.from === key);
+    if (tr) return { cls: "transfer", text: tr.at > now
+      ? tr.people + " people move to Filling at " + Time.hm(tr.at)
+      : tr.people + " people handed over to Filling at " + Time.hm(tr.at) };
+  }
+  const sc = SC(key);
+  let best = null;
+  const up = StaffingEventManager.upcoming(sc, now);
+  if (up.length) best = { t: up[0].t, text: describeEvent(up[0]), cls: up[0].transferFrom ? "transfer" : "" };
+  for (const b of BreakEngine.resolved(sc)){
+    if (b.e <= now) continue;
+    const t = b.s > now ? b.s : b.e;
+    const text = b.s > now
+      ? b.name + " · " + Math.round((1 - b.away) * 100) + "% capacity"
+      : b.name + " ends · back to " + Math.round(BreakEngine.factorAt(sc, b.e) * 100) + "%";
+    if (!best || t < best.t) best = { t, text, cls: "" };
+  }
+  if (!best) return { cls: "", text: "No further changes scheduled" };
+  return { cls: best.cls, text: Time.hm(best.t) + " · " + best.text };
+}
+
+/* ---------------------------------------------------------------- Simulation panel */
+const SimPanel = {
+  proc: "filling",
+  verdict(key, now){
+    const sc = SC(key), m = Metrics.cache[key];
+    const deadline = deadlineOf(key);
+    const rem = m ? m.rem : 0;
+    const finish = m ? m.finish : null;
+    const left = sc.snapshots.length ? CalculationEngine.remainingAt(sc, deadline) : 0;
+    const onTime = rem <= 0.5 || (finish != null && finish <= deadline);
+    let need = null;
+    if (!onTime && sc.snapshots.length) need = CalculationEngine.peopleNeededFor(sc, now, deadline, 300);
+    return { deadline, finish, left, onTime, need, rem, custom: !!state.processes[key].deadline };
+  },
+  render(now){
+    const key = SimPanel.proc, sc = SC(key), p = PROC[key];
+    const vEl = document.getElementById("simVerdict"), tEl = document.getElementById("simTable");
+    const dlInput = document.getElementById("simDeadline");
+    const v = SimPanel.verdict(key, now);
+    if (document.activeElement !== dlInput) dlInput.value = Time.hm(v.deadline);
+
+    if (!sc.snapshots.length){
+      vEl.innerHTML = '<div class="vbox" style="grid-column:1/-1"><u>' + p.name + '</u><b>No workload yet</b>' +
+        '<s>Enter the opening workload to run the simulation.</s></div>';
+      tEl.innerHTML = '<p class="empty" style="padding:16px">Nothing to simulate yet.</p>';
+      return;
+    }
+    const spare = v.finish != null ? v.deadline - v.finish : null;
+    vEl.innerHTML =
+      '<div class="vbox hi"><u>Projected finish</u><b>' + (v.rem <= 0.5 ? "Done" : v.finish != null ? Time.hmRounded(v.finish) : "—") + '</b>' +
+        '<s>' + (v.rem <= 0.5 ? "workload cleared" : v.finish != null ? "in " + durHMS(v.finish - now) : "not at this rate") + '</s></div>' +
+      '<div class="vbox"><u>Must be finished by</u><b>' + Time.hm(v.deadline) + '</b><s>' + (v.custom ? "your deadline" : "end of shift") + '</s></div>' +
+      '<div class="vbox ' + (v.onTime ? "ok" : "late") + '"><u>' + (v.onTime ? "Time to spare" : "Left at deadline") + '</u>' +
+        '<b>' + (v.onTime ? (spare != null ? durHMS(spare).slice(0, 5) : "—") : nf(v.left)) + '</b>' +
+        '<s>' + (v.onTime ? "hours : minutes ahead" : "articles still open at " + Time.hm(v.deadline)) + '</s></div>' +
+      '<div class="vbox ' + (v.onTime ? "" : "late") + '"><u>Extra people needed</u>' +
+        '<b>' + (v.onTime ? "0" : v.need != null ? "+" + v.need : "—") + '</b>' +
+        '<s>' + (v.onTime ? "you are on track" : v.need != null ? "added now, finishes by " + Time.hm(v.deadline) : "not reachable with people alone") + '</s></div>';
+
+    const end = Math.max(v.finish != null ? v.finish : 0, v.deadline, now + 60000);
+    const rows = CalculationEngine.breakdown(sc, now, end + 60000, 40);
+    const base = Math.max(1, sc.baseline || v.rem);
+    tEl.innerHTML =
+      '<div class="simhead"><span>From</span><span>What is happening</span><span>People</span><span>Rate/min</span><span>Picked</span><span>Left after</span></div>' +
+      rows.map((r, i) => {
+        const dl = (r.t0 <= v.deadline && r.t1 > v.deadline);
+        const what = r.marker.text
+          ? '<span class="pill ' + (r.marker.cls || "ev") + '">' + r.marker.text + '</span>'
+          : '<span>' + (r.factor === 0 ? "no capacity" : r.factor < 1 ? Math.round(r.factor * 100) + "% of the team working" : "full team working") + '</span>';
+        return '<div class="simrow" style="--accent:' + p.accent + ';animation-delay:' + Math.min(i * 22, 500) + 'ms">' +
+          '<span class="tm">' + Time.hm(r.t0) + (r.cleared ? " → " + Time.hms(r.t1).slice(0, 5) : "") + '</span>' +
+          '<span class="what">' + what + (dl ? '<span class="pill end">deadline ' + Time.hm(v.deadline) + '</span>' : "") + '</span>' +
+          '<span>' + r.people + (r.factor < 1 ? " · " + nf1(r.people * r.factor) : "") + '</span>' +
+          '<span class="' + (r.ratePerMin <= 0 ? "stop" : "") + '">' + nf(r.ratePerMin) + '</span>' +
+          '<span>' + nf(r.produced) + '</span>' +
+          '<span class="rem"><span>' + nf(r.remEnd) + '</span><span class="simbar"><i style="width:' +
+            clamp(r.remEnd / base * 100, 0, 100).toFixed(1) + '%"></i></span></span>' +
+        '</div>';
+      }).join("") +
+      '<div class="simnote">' + (v.rem <= 0.5 ? "Workload already cleared."
+        : rows.length && rows[rows.length - 1].cleared
+          ? "Clears at " + Time.hms(rows[rows.length - 1].t1) + ", shown as " + Time.hmRounded(rows[rows.length - 1].t1) + "."
+          : "Still open at the end of this window — " + nf(rows.length ? rows[rows.length - 1].remEnd : v.rem) + " articles left.") +
+      (key === "filling" && state.flow && state.flow.enabled
+        ? " Hand-overs from Picking and Groot are included as soon as those areas clear their own workload."
+        : "") + '</div>';
+  },
+  init(){
+    document.querySelectorAll("#simSeg button").forEach(b => b.onclick = () => {
+      SimPanel.proc = b.dataset.sp;
+      document.querySelectorAll("#simSeg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      SimPanel.render(Date.now());
+    });
+    const dl = document.getElementById("simDeadline");
+    dl.onchange = () => {
+      const m = Time.parseHM(dl.value);
+      if (m == null) return;
+      state.processes[SimPanel.proc].deadline = dl.value;
+      touch(); SimPanel.render(Date.now());
+      Toast.show("Deadline set", PROC[SimPanel.proc].name + " must be finished by " + dl.value);
+    };
+    document.getElementById("simDeadlineClear").onclick = () => {
+      state.processes[SimPanel.proc].deadline = null;
+      touch(); SimPanel.render(Date.now());
+      Toast.show("Deadline reset", "Back to the end of the shift.");
+    };
+  }
+};
+
+/* ---------------------------------------------------------------- Metrics + animation */
+const Metrics = {
+  cache: {},
+  recompute(now){
+    for (const p of PROCS){
+      const sc = SC(p.key);
+      const rem = CalculationEngine.remainingAt(sc, now);
+      const people = StaffingEventManager.peopleAt(sc, now);
+      const norm = StaffingEventManager.normAt(sc, now);
+      const factor = BreakEngine.factorAt(sc, now);
+      const finish = sc.snapshots.length ? CalculationEngine.finishFrom(sc, now, rem) : null;
+      const deadline = deadlineOf(p.key);
+      Metrics.cache[p.key] = {
+        deadline,
+        remAtDeadline: sc.snapshots.length ? CalculationEngine.remainingAt(sc, deadline) : 0,
+        rem, people, norm, factor,
+        effective: people * factor,
+        ratePerMin: people * norm * factor / 60,
+        finish,
+        status: CalculationEngine.statusAt(sc, now),
+        baseline: sc.baseline || 0,
+        breaks: BreakEngine.activeAt(sc, now)
+      };
+    }
+  }
+};
+const AnimationEngine = {
+  disp: {},
+  lerp(key, target, snap){
+    const d = AnimationEngine.disp;
+    if (d[key] == null || snap) { d[key] = target; return target; }
+    const diff = target - d[key];
+    if (Math.abs(diff) < 0.45) d[key] = target;
+    else d[key] += diff * 0.16;
+    return d[key];
+  }
+};
+</script>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------------- Actions (modals) */
+const Actions = {
+  updateWorkload(key){
+    const p = PROC[key], sc = state.processes[key], now = Date.now();
+    const cur = Math.round(CalculationEngine.remainingAt(SC(key), now));
+    const locusCapable = key !== "filling";
+    const num = v => {
+      const cleaned = String(v == null ? "" : v).replace(/[\s.,]/g, "");
+      if (cleaned === "") return null;
+      const n = +cleaned;
+      return isFinite(n) ? n : NaN;
+    };
+    const lrow = (id, label, ph) =>
+      '<div class="lrow"><label for="' + id + '">' + label + '</label>' +
+      '<input id="' + id + '" type="text" inputmode="numeric" autocomplete="off" placeholder="' + ph + '"></div>';
+
+    const body = mode => {
+      if (mode === "locus"){
+        return '<div class="locus">' +
+            lrow("lo1", "Colli inactief", "63 208") +
+            lrow("lo2", "RC voorbereid", "837") +
+            lrow("lo3", "Colli in picktaak", "5 027") +
+            '<div class="ltotal"><u>Total left</u><b class="num" id="loTotal">0</b></div>' +
+            '<div class="lformula" id="loFormula">Type the three numbers from Locus.</div>' +
+          '</div>' +
+          '<label class="check"><input type="checkbox" id="loHalf"' + (state.ui.locusHalf ? " checked" : "") +
+            '> Count colli in picktaak as half — the original Excel rule (D24 + D25 ÷ 2)</label>';
+      }
+      return fieldHTML("uw", "Articles remaining", "text", "", 'inputmode="numeric" autocomplete="off" placeholder="' + nf(cur) + '"');
+    };
+    const shell = mode =>
+      '<h3>' + (mode === "locus" ? "Update from Locus — " : "Update workload — ") + p.name + '</h3>' +
+      '<p class="sub">' + (mode === "locus"
+        ? "Read the three counters straight off Locus. The total replaces the workload from this second onward; nothing before it changes."
+        : "Type the number you can see right now. It replaces the workload from this second onward.") + '</p>' +
+      (locusCapable
+        ? '<div class="seg" style="margin-bottom:16px" role="group" aria-label="Input style">' +
+            '<button data-m="locus" aria-pressed="' + (mode === "locus") + '">Locus counters</button>' +
+            '<button data-m="single" aria-pressed="' + (mode === "single") + '">One total</button></div>'
+        : "") +
+      body(mode) +
+      '<p class="meta" style="margin-top:14px">Now projected ' + nf(cur) + ' · effective ' + Time.hms(now) + '</p>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Cancel</button>' +
+      '<button class="btn primary" data-x="ok">Update now</button></div>';
+
+    const commit = (total, parts, detail) => {
+      const t = Date.now();
+      const before = Math.round(CalculationEngine.remainingAt(SC(key), t));
+      WorkloadSnapshotManager.add(sc, t, total, parts);
+      Log.add("workload", key, p.name + " workload updated", detail || (nf(before) + " → " + nf(total) + " articles"), t);
+      touch(); Modal.close(); UIRenderer.flash(key);
+      Toast.show("Workload updated", nf(before) + " → " + nf(total) + " · effective " + Time.hms(t));
+    };
+
+    const open = mode => Modal.open(shell(mode), el => {
+      el.querySelectorAll("[data-m]").forEach(btn => btn.onclick = () => open(btn.dataset.m));
+      el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+
+      if (mode === "locus"){
+        const ids = ["lo1", "lo2", "lo3"];
+        const totalEl = el.querySelector("#loTotal"), formulaEl = el.querySelector("#loFormula"), halfEl = el.querySelector("#loHalf");
+        const calc = () => {
+          const v = ids.map(i => num(el.querySelector("#" + i).value));
+          const half = halfEl.checked;
+          const any = v.some(x => x !== null);
+          const bad = v.some(x => x !== null && (isNaN(x) || x < 0));
+          const n = v.map(x => (x === null || isNaN(x)) ? 0 : x);
+          const picktaak = half ? n[2] / 2 : n[2];
+          const total = n[0] + n[1] + picktaak;
+          totalEl.textContent = any && !bad ? nf(total) : "0";
+          totalEl.classList.remove("bump"); void totalEl.offsetWidth; totalEl.classList.add("bump");
+          formulaEl.textContent = !any ? "Type the three numbers from Locus."
+            : bad ? "Only positive numbers, please."
+            : nf(n[0]) + " + " + nf(n[1]) + " + " + (half ? "(" + nf(n[2]) + " ÷ 2)" : nf(n[2])) + " = " + nf(total);
+          return { total, any, bad, n, half };
+        };
+        ids.forEach(i => el.querySelector("#" + i).oninput = calc);
+        halfEl.onchange = () => { state.ui.locusHalf = halfEl.checked; touch(); calc(); };
+        calc();
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          const r = calc();
+          if (!r.any || r.bad){ formulaEl.textContent = "Fill in the Locus counters first."; formulaEl.style.color = "var(--crit)"; return; }
+          commit(Math.round(r.total), { inactief: r.n[0], voorbereid: r.n[1], picktaak: r.n[2], half: r.half },
+            nf(r.n[0]) + " + " + nf(r.n[1]) + " + " + (r.half ? "½ × " : "") + nf(r.n[2]) + " = " + nf(Math.round(r.total)));
+        };
+      } else {
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          const v = num(el.querySelector("#uw").value);
+          if (v === null || isNaN(v) || v < 0){ setErr("uw", "Enter a number of 0 or more."); return; }
+          commit(Math.round(v), null);
+        };
+      }
+    });
+    open(locusCapable ? "locus" : "single");
+  },
+
+  flowSettings(){
+    const now = Date.now();
+    const block = src => {
+      const cfg = state.flow.sources[src];
+      const fin = WorkforceFlowEngine.finishOf(src);
+      const ppl = fin ? StaffingEventManager.peopleAt(state.processes[src], fin) : 0;
+      return '<div class="setup-card" style="--accent:' + PROC[src].accent + ';margin-bottom:12px">' +
+        '<h3><span class="dot"></span>' + PROC[src].name + '</h3>' +
+        '<p class="sub" style="margin:0 0 13px">' + (fin
+          ? "Clears at " + Time.hmRounded(fin) + " with " + ppl + " people on the floor."
+          : "No workload entered yet.") + '</p>' +
+        '<div class="subgrid" style="grid-template-columns:1fr 1fr">' +
+          fieldHTML("fs-" + src, "Share that moves (%)", "number", Math.round(cfg.share * 100), 'min="0" max="100" step="5"') +
+          fieldHTML("fd-" + src, "Changeover (min)", "number", cfg.delayMin, 'min="0" max="120" step="1"') +
+        '</div></div>';
+    };
+    Modal.open(
+      '<h3>Hand-over to Filling</h3>' +
+      '<p class="sub">When an area clears its workload its people move to Filling, so Filling speeds up from that moment. ' +
+      'Set how many of them move and how long the changeover takes. Turn it off to keep the three areas independent.</p>' +
+      '<label class="check" style="margin:0 0 18px"><input type="checkbox" id="flOn"' + (state.flow.enabled ? " checked" : "") +
+        '> Move people to Filling when Picking or Groot finishes</label>' +
+      block("picking") + block("groot") +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>',
+      el => {
+        el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          state.flow.enabled = el.querySelector("#flOn").checked;
+          for (const src of ["picking", "groot"]){
+            const share = clamp(+el.querySelector("#fs-" + src).value || 0, 0, 100) / 100;
+            const delay = clamp(+el.querySelector("#fd-" + src).value || 0, 0, 120);
+            state.flow.sources[src] = { share, delayMin: delay };
+          }
+          /* anything already in the past is treated as known, so it doesn't re-announce */
+          state.flow.logged = [];
+          touch();
+          for (const tr of WorkforceFlowEngine.transfers()) if (tr.at <= Date.now()) state.flow.logged.push(tr.from + "@" + Math.round(tr.at / 60000));
+          touch(); Modal.close(); UIRenderer.flash("filling");
+          Toast.show("Hand-over saved", state.flow.enabled ? "Filling will pick up people as areas finish." : "Filling stays independent.");
+        };
+      }
+    );
+  },
+
+  changePeople(key){
+    const p = PROC[key], sc = state.processes[key], now = Date.now();
+    Modal.open(
+      '<h3>' + p.name + ' — people</h3>' +
+      '<p class="sub">Set the exact head count. It applies from the moment you choose; earlier production keeps the old number.</p>' +
+      '<div class="subgrid">' +
+        fieldHTML("cp", "People", "number", StaffingEventManager.peopleAt(sc, now), 'min="0" step="1" inputmode="numeric"') +
+        fieldHTML("cpt", "From", "time", Time.hm(now), 'step="60"') +
+      '</div>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>',
+      el => {
+        el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          const v = +document.getElementById("cp").value;
+          if (!isFinite(v) || v < 0 || v > 999){ setErr("cp", "Enter 0–999 people."); return; }
+          const t = timeFieldToTs("cpt"); if (t == null){ setErr("cpt", "Enter a valid time."); return; }
+          const before = StaffingEventManager.peopleAt(sc, t);
+          StaffingEventManager.add(sc, { t, peopleSet: Math.round(v) });
+          Log.add("people", key, p.name + " people set", before + " → " + Math.round(v) + (t > Date.now() + 5e3 ? " (from " + Time.hm(t) + ")" : ""), Math.min(t, Date.now()));
+          touch(); Modal.close(); UIRenderer.flash(key);
+          Toast.show("People updated", p.name + " · " + before + " → " + Math.round(v) + " from " + Time.hm(t));
+        };
+      }
+    );
+  },
+
+  changeNorm(key){
+    const p = PROC[key], sc = state.processes[key], now = Date.now();
+    Modal.open(
+      '<h3>' + p.name + ' — norm</h3>' +
+      '<p class="sub">Articles per person per hour. The forecast updates from the chosen moment onward.</p>' +
+      '<div class="subgrid">' +
+        fieldHTML("cn", "Norm / hour", "number", StaffingEventManager.normAt(sc, now), 'min="0" step="1" inputmode="numeric"') +
+        fieldHTML("cnt", "From", "time", Time.hm(now), 'step="60"') +
+      '</div>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>',
+      el => {
+        el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          const v = +document.getElementById("cn").value;
+          if (!isFinite(v) || v < 0 || v > 5000){ setErr("cn", "Enter a norm between 0 and 5000."); return; }
+          const t = timeFieldToTs("cnt"); if (t == null){ setErr("cnt", "Enter a valid time."); return; }
+          const before = StaffingEventManager.normAt(sc, t);
+          StaffingEventManager.add(sc, { t, norm: Math.round(v) });
+          Log.add("norm", key, p.name + " norm changed", before + " → " + Math.round(v) + "/h" + (t > Date.now() + 5e3 ? " (from " + Time.hm(t) + ")" : ""), Math.min(t, Date.now()));
+          touch(); Modal.close(); UIRenderer.flash(key);
+          Toast.show("Norm updated", p.name + " · " + before + " → " + Math.round(v) + "/h");
+        };
+      }
+    );
+  },
+
+  stepPeople(key, d){
+    const sc = state.processes[key], t = Date.now();
+    const before = StaffingEventManager.peopleAt(sc, t);
+    if (before + d < 0){ Toast.show("Already at zero people", PROC[key].name + " has nobody to remove.", "err"); return; }
+    StaffingEventManager.add(sc, { t, peopleDelta: d });
+    Log.add("people", key, PROC[key].name + (d > 0 ? " +1 person" : " −1 person"), before + " → " + (before + d) + " people", t);
+    touch(); UIRenderer.flash(key);
+    Toast.show(d > 0 ? "Person added" : "Person removed", PROC[key].name + " · " + before + " → " + (before + d));
+  },
+
+  futureChanges(key){
+    const p = PROC[key], sc = state.processes[key];
+    const render = () => {
+      const now = Date.now();
+      const rows = StaffingEventManager.sorted(sc).map(e => {
+        const bits = [];
+        if (e.peopleSet != null) bits.push("people → " + e.peopleSet);
+        if (e.peopleDelta) bits.push((e.peopleDelta > 0 ? "+" : "") + e.peopleDelta + " people");
+        if (e.norm != null) bits.push("norm → " + e.norm + "/h");
+        return '<div class="evrow' + (e.t < now ? " past" : "") + '"><span class="t num">' + Time.hm(e.t) + '</span>' +
+          '<span class="d">' + (bits.join(" · ") || "no change") + (e.t < now ? " · applied" : "") + '</span>' +
+          '<button class="xbtn" data-del="' + e.id + '" aria-label="Delete">×</button></div>';
+      }).join("");
+      return (rows || '<p class="empty">No scheduled changes yet.</p>');
+    };
+    const body = () =>
+      '<h3>' + p.name + ' — scheduled changes</h3>' +
+      '<p class="sub">Each entry applies from its own timestamp. History before it is never recalculated.</p>' +
+      '<div class="evlist" id="evlist">' + render() + '</div>' +
+      '<div class="subgrid">' +
+        fieldHTML("fcT", "Time", "time", Time.hm(Date.now()), 'step="60"') +
+        fieldHTML("fcP", "People ±", "number", 0, 'step="1"') +
+        fieldHTML("fcN", "Norm (optional)", "number", "", 'min="0" step="1" placeholder="unchanged"') +
+      '</div>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Close</button><button class="btn primary" data-x="add">Add change</button></div>';
+    const wire = el => {
+      el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+      el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+        sc.events = sc.events.filter(e => e.id !== b.dataset.del);
+        touch(); document.getElementById("evlist").innerHTML = render(); wire(el);
+        Toast.show("Change removed", p.name + " schedule updated");
+      });
+      const add = el.querySelector('[data-x="add"]');
+      if (add) add.onclick = () => {
+        const t = timeFieldToTs("fcT"); if (t == null){ setErr("fcT", "Enter a valid time."); return; }
+        const dp = +document.getElementById("fcP").value || 0;
+        const nRaw = document.getElementById("fcN").value;
+        const n = nRaw === "" ? null : +nRaw;
+        if (n != null && (!isFinite(n) || n < 0)){ setErr("fcN", "Norm must be 0 or more."); return; }
+        if (!dp && n == null){ setErr("fcP", "Set a people change or a norm."); return; }
+        if (dp && StaffingEventManager.peopleAt(sc, t) + dp < 0){ setErr("fcP", "That would take people below zero."); return; }
+        StaffingEventManager.add(sc, { t, peopleDelta: dp, norm: n });
+        const bits = [];
+        if (dp) bits.push((dp > 0 ? "+" : "") + dp + " people");
+        if (n != null) bits.push("norm " + n + "/h");
+        Log.add("event", key, p.name + " change scheduled", Time.hm(t) + " · " + bits.join(" · "));
+        touch(); Modal.open(body(), wire);
+        Toast.show("Change scheduled", Time.hm(t) + " · " + bits.join(" · "));
+      };
+    };
+    Modal.open(body(), wire);
+  },
+
+  editBreaks(key){
+    const p = PROC[key], sc = state.processes[key];
+    const render = () => sc.breaks.slice().sort((a, b) => (Time.parseHM(a.start) || 0) - (Time.parseHM(b.start) || 0)).map(b =>
+      '<div class="evrow"><span class="t num">' + b.start + '–' + b.end + '</span>' +
+      '<span class="d">' + b.name + ' · ' + Math.round(b.away * 100) + '% away → ' + Math.round((1 - b.away) * 100) + '% capacity</span>' +
+      '<button class="xbtn" data-del="' + b.id + '" aria-label="Delete">×</button></div>').join("")
+      || '<p class="empty">No breaks for this area.</p>';
+    const body = () =>
+      '<h3>' + p.name + ' — breaks</h3>' +
+      '<p class="sub">Breaks cut capacity, never head count. Two overlapping 50% group breaks add up to a full stop.' +
+      (key === "groot" ? ' Groot takes the second break as one whole team.' : '') + '</p>' +
+      '<div class="evlist" id="brlist">' + render() + '</div>' +
+      '<div class="subgrid">' +
+        fieldHTML("bName", "Name", "text", "Third break", '') +
+        fieldHTML("bS", "Start", "time", "", 'step="60"') +
+        fieldHTML("bE", "End", "time", "", 'step="60"') +
+      '</div>' +
+      '<div class="field" style="margin-top:12px"><label for="bAway">Team on break</label>' +
+        '<select id="bAway"><option value="0.5">Half the team (50% capacity)</option><option value="1">Whole team (0% capacity)</option><option value="0.25">A quarter (75% capacity)</option></select><em class="err"></em></div>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="reset">Reload defaults</button><button class="btn ghost" data-x="cancel">Close</button><button class="btn primary" data-x="add">Add break</button></div>';
+    const wire = el => {
+      el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+      el.querySelector('[data-x="reset"]').onclick = () => {
+        sc.breaks = defaultBreaks(state.shift.type, key); touch();
+        Modal.open(body(), wire); Toast.show("Breaks reloaded", p.name + " · " + state.shift.type + " defaults");
+      };
+      el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+        sc.breaks = sc.breaks.filter(x => x.id !== b.dataset.del); touch();
+        document.getElementById("brlist").innerHTML = render(); wire(el);
+      });
+      el.querySelector('[data-x="add"]').onclick = () => {
+        const name = document.getElementById("bName").value.trim() || "Break";
+        const s = document.getElementById("bS").value, e = document.getElementById("bE").value;
+        const ms = Time.parseHM(s), me = Time.parseHM(e);
+        if (ms == null){ setErr("bS", "Enter a valid start time."); return; }
+        if (me == null){ setErr("bE", "Enter a valid end time."); return; }
+        if (me <= ms){ setErr("bE", "The break must end after it starts."); return; }
+        sc.breaks.push({ id: uid(), name, start: s, end: e, away: +document.getElementById("bAway").value });
+        Log.add("brk", key, p.name + " break added", name + " " + s + "–" + e);
+        touch(); Modal.open(body(), wire);
+        Toast.show("Break added", name + " · " + s + "–" + e);
+      };
+    };
+    Modal.open(body(), wire);
+  },
+
+  settings(){
+    Modal.open(
+      '<h3>Shift settings</h3>' +
+      '<p class="sub">Change the window or reopen the setup panel. Live data is kept.</p>' +
+      '<div class="subgrid">' +
+        fieldHTML("stS", "Shift start", "time", state.shift.start, 'step="60"') +
+        fieldHTML("stE", "Shift end", "time", state.shift.end, 'step="60"') +
+      '</div>' +
+      '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
+        '<button class="btn" data-x="setup">Show setup panel</button>' +
+        '<button class="btn" data-x="clearlog">Clear activity log</button>' +
+      '</div>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>',
+      el => {
+        el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+        el.querySelector('[data-x="setup"]').onclick = () => { document.getElementById("setup").classList.add("open"); UIRenderer.syncSetup(); Modal.close(); };
+        el.querySelector('[data-x="clearlog"]').onclick = () => { state.log = []; touch(); UIRenderer.renderLog(); Toast.show("Activity cleared", "The calculation is unaffected."); };
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          const s = document.getElementById("stS").value, e = document.getElementById("stE").value;
+          if (Time.parseHM(s) == null){ setErr("stS", "Enter a valid time."); return; }
+          if (Time.parseHM(e) == null){ setErr("stE", "Enter a valid time."); return; }
+          state.shift.start = s; state.shift.end = e; touch(); UIRenderer.syncSetup(); Modal.close();
+          Toast.show("Shift window saved", s + "–" + e);
+        };
+      }
+    );
+  },
+
+  newShift(){
+    Modal.open(
+      '<h3>Start a new shift?</h3>' +
+      '<p class="sub">Everything on the board is wiped: workload, people, scheduled changes, hand-overs and activity. ' +
+      'The setup boxes come back empty, ready for the next shift. Export first if you need the record.</p>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Keep working</button><button class="btn ghost" data-x="export">Export first</button><button class="btn danger" data-x="ok">Start new shift</button></div>',
+      el => {
+        el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+        el.querySelector('[data-x="export"]').onclick = () => ExportManager.json();
+        el.querySelector('[data-x="ok"]').onclick = () => {
+          const type = state.shift.type;
+          state = freshState(type);
+          touch(); Modal.close();
+          UIRenderer.buildSetup(); UIRenderer.syncSetup(); UIRenderer.renderLog();
+          document.getElementById("setup").classList.add("open");
+          AnimationEngine.disp = {};
+          Toast.show("New shift ready", "Enter the starting workload for each area.");
+        };
+      }
+    );
+  }
+};
+function timeFieldToTs(id){
+  const v = document.getElementById(id).value;
+  const m = Time.parseHM(v);
+  if (m == null) return null;
+  const now = Date.now(), p = Time.parts(now);
+  let ts = Time.make(p.year, p.month, p.day, Math.floor(m / 60), m % 60, 0);
+  const w = shiftWindow();
+  if (ts < w.start - 6 * 3600e3) ts += 864e5;
+  return ts;
+}
+
+/* ---------------------------------------------------------------- Chart */
+const ChartEngine = {
+  series: {}, win: null,
+  build(sc, t0, t1, steps){
+    const bounds = CalculationEngine.boundaries(sc);
+    const pts = [];
+    let rem = CalculationEngine.remainingAt(sc, t0), t = t0;
+    const step = (t1 - t0) / steps;
+    for (let i = 0; i <= steps; i++){
+      const tt = t0 + step * i;
+      if (tt > t) { rem = CalculationEngine.simulate(sc, t, tt, rem, bounds); t = tt; }
+      pts.push({ t: tt, v: rem });
+    }
+    return pts;
+  },
+  draw(now){
+    const wrap = document.getElementById("chartWrap"), svg = document.getElementById("chart");
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    if (!W || !H) return;
+    svg.setAttribute("width", W); svg.setAttribute("height", H);
+    const sw = shiftWindow();
+    let t0 = Math.min(sw.start, now), t1 = sw.end;
+    for (const p of PROCS){ const f = Metrics.cache[p.key] && Metrics.cache[p.key].finish; if (f) t1 = Math.max(t1, f + 10 * 60e3); }
+    t1 = Math.max(t1, now + 30 * 60e3);
+    ChartEngine.win = { t0, t1 };
+    const rel = state.ui.chartScale === "rel";
+    const pad = { l: 52, r: 14, t: 14, b: 24 };
+    const x = t => pad.l + (t - t0) / (t1 - t0) * (W - pad.l - pad.r);
+    let maxV = 1;
+    ChartEngine.series = {};
+    for (const p of PROCS){
+      const sc = SC(p.key);
+      const s = sc.snapshots.length ? ChartEngine.build(sc, t0, t1, 180) : [];
+      ChartEngine.series[p.key] = s;
+      if (!rel) for (const q of s) maxV = Math.max(maxV, q.v);
+    }
+    if (rel) maxV = 100;
+    const y = v => pad.t + (1 - v / maxV) * (H - pad.t - pad.b);
+    let out = "";
+    // horizontal grid
+    for (let i = 0; i <= 4; i++){
+      const v = maxV * i / 4, yy = y(v);
+      out += '<line x1="' + pad.l + '" x2="' + (W - pad.r) + '" y1="' + yy + '" y2="' + yy + '" stroke="#E7EBF1"/>' +
+             '<text x="' + (pad.l - 8) + '" y="' + (yy + 4) + '" text-anchor="end" fill="#8B96A6" font-size="11" font-weight="600">' + (rel ? v + "%" : nf(v)) + '</text>';
+    }
+    // hour ticks
+    const hourStep = (t1 - t0) > 10 * 3600e3 ? 2 : 1;
+    let tick = Math.ceil(t0 / 3600e3) * 3600e3;
+    for (; tick < t1; tick += hourStep * 3600e3){
+      out += '<line x1="' + x(tick) + '" x2="' + x(tick) + '" y1="' + pad.t + '" y2="' + (H - pad.b) + '" stroke="#EEF1F6"/>' +
+             '<text x="' + x(tick) + '" y="' + (H - 6) + '" text-anchor="middle" fill="#8B96A6" font-size="11" font-weight="600">' + Time.hm(tick) + '</text>';
+    }
+    // break shading (picking as reference) + markers
+    for (const p of PROCS){
+      const sc = SC(p.key);
+      for (const b of BreakEngine.resolved(sc)){
+        if (b.e < t0 || b.s > t1 || b.away < 1) continue;
+        out += '<rect x="' + x(b.s) + '" y="' + pad.t + '" width="' + Math.max(1, x(b.e) - x(b.s)) + '" height="' + (H - pad.t - pad.b) + '" fill="rgba(239,138,18,.10)"/>';
+      }
+      for (const e of sc.events){
+        if (e.t < t0 || e.t > t1) continue;
+        out += '<line x1="' + x(e.t) + '" x2="' + x(e.t) + '" y1="' + pad.t + '" y2="' + (H - pad.b) + '" stroke="' + p.hex + '" stroke-opacity=".45" stroke-dasharray="3 4"/>';
+      }
+      for (const s of sc.snapshots){
+        if (s.t < t0 || s.t > t1) continue;
+        out += '<circle cx="' + x(s.t) + '" cy="' + y(rel ? (sc.baseline ? s.remaining / sc.baseline * 100 : 0) : s.remaining) + '" r="4" fill="#fff" stroke="' + p.hex + '" stroke-width="2.4"/>';
+      }
+    }
+    // lines
+    for (const p of PROCS){
+      const sc = SC(p.key), s = ChartEngine.series[p.key];
+      if (!s || !s.length) continue;
+      const d = s.map((q, i) => (i ? "L" : "M") + x(q.t).toFixed(1) + " " + y(rel ? (sc.baseline ? q.v / sc.baseline * 100 : 0) : q.v).toFixed(1)).join(" ");
+      out += '<path d="' + d + '" fill="none" stroke="' + p.hex + '" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round" opacity=".95"/>';
+    }
+    // now marker
+    if (now >= t0 && now <= t1){
+      out += '<line x1="' + x(now) + '" x2="' + x(now) + '" y1="' + (pad.t - 6) + '" y2="' + (H - pad.b) + '" stroke="#10141A" stroke-opacity=".45" stroke-dasharray="2 3"/>' +
+             '<text x="' + (x(now) + 6) + '" y="' + (pad.t + 2) + '" fill="#10141A" font-size="11" font-weight="700">now</text>';
+    }
+    svg.innerHTML = out;
+  },
+  hover(ev){
+    const wrap = document.getElementById("chartWrap"), tip = document.getElementById("chartTip");
+    if (!ChartEngine.win){ tip.style.opacity = 0; return; }
+    const r = wrap.getBoundingClientRect();
+    const px = ev.clientX - r.left;
+    const pad = { l: 52, r: 14 };
+    const frac = (px - pad.l) / (r.width - pad.l - pad.r);
+    if (frac < 0 || frac > 1){ tip.style.opacity = 0; return; }
+    const t = ChartEngine.win.t0 + frac * (ChartEngine.win.t1 - ChartEngine.win.t0);
+    let html = "<h4>" + Time.hm(t) + "</h4>";
+    for (const p of PROCS){
+      const sc = SC(p.key), s = ChartEngine.series[p.key];
+      if (!s || !s.length) continue;
+      const idx = clamp(Math.round(frac * (s.length - 1)), 0, s.length - 1);
+      const people = StaffingEventManager.peopleAt(sc, t), norm = StaffingEventManager.normAt(sc, t), f = BreakEngine.factorAt(sc, t);
+      html += '<div><span style="color:' + p.hex + '">' + p.name + '</span><b>' + nf(s[idx].v) + '</b></div>' +
+              '<div><span>' + people + ' ppl · ' + norm + '/h</span><b>' + nf(people * norm * f / 60) + '/min</b></div>';
+    }
+    tip.innerHTML = html;
+    tip.style.left = px + "px";
+    tip.style.top = (ev.clientY - r.top) + "px";
+    tip.style.opacity = 1;
+  }
+};
+
+/* ---------------------------------------------------------------- What-if */
+const WhatIf = {
+  proc: "picking",
+  scenario(){
+    const sc = SC(WhatIf.proc), now = Date.now();
+    const clone = {
+      key: sc.key, basePeople: sc.basePeople, baseNorm: sc.baseNorm, baseline: sc.baseline,
+      snapshots: sc.snapshots.slice(), events: sc.events.slice(), breaks: sc.breaks.slice(), _extraBreak: null
+    };
+    const dp = +document.getElementById("wiPeople").value || 0;
+    const nRaw = document.getElementById("wiNorm").value;
+    const n = nRaw === "" ? null : +nRaw;
+    if (dp || n != null) clone.events = clone.events.concat([{ id: "wi", t: now, peopleDelta: dp, peopleSet: null, norm: (n != null && isFinite(n) && n >= 0) ? n : null }]);
+    const a = document.getElementById("wiBreakA").value, b = document.getElementById("wiBreakB").value;
+    const ma = Time.parseHM(a), mb = Time.parseHM(b);
+    if (ma != null && mb != null && mb > ma) clone._extraBreak = { s: resolveOnShiftDay(a), e: resolveOnShiftDay(b), away: 1, name: "What-if break" };
+    return { clone, dp, n, hasBreak: !!clone._extraBreak };
+  },
+  update(now){
+    const sc = SC(WhatIf.proc);
+    const m = Metrics.cache[WhatIf.proc];
+    const { clone, dp, n, hasBreak } = WhatIf.scenario();
+    const base = m ? m.finish : null;
+    const alt = sc.snapshots.length ? CalculationEngine.finishFrom(clone, now, CalculationEngine.remainingAt(clone, now)) : null;
+    document.getElementById("wiNow").textContent = base ? Time.hmRounded(base) : "--:--";
+    document.getElementById("wiAlt").textContent = alt ? Time.hmRounded(alt) : (sc.snapshots.length ? "no finish" : "--:--");
+    const box = document.getElementById("wiDelta");
+    if (!dp && n == null && !hasBreak){ box.className = "wi-delta"; box.textContent = "Adjust a value to compare."; return; }
+    if (!base || !alt){ box.className = "wi-delta"; box.textContent = "No comparable finish time."; return; }
+    const diff = Math.round((alt - base) / 60000);
+    box.className = "wi-delta " + (diff < 0 ? "good" : diff > 0 ? "bad" : "");
+    box.textContent = diff === 0 ? "Same finish time" : (diff < 0 ? Math.abs(diff) + " minutes earlier" : diff + " minutes later");
+  },
+  apply(){
+    const sc = state.processes[WhatIf.proc], now = Date.now();
+    const { dp, n, hasBreak } = WhatIf.scenario();
+    if (!dp && n == null && !hasBreak){ Toast.show("Nothing to apply", "Set a people change, a norm or a break first.", "err"); return; }
+    if (dp || n != null){
+      if (dp && StaffingEventManager.peopleAt(sc, now) + dp < 0){ Toast.show("Too many removed", "That would take people below zero.", "err"); return; }
+      StaffingEventManager.add(sc, { t: now, peopleDelta: dp, norm: (n != null ? n : null) });
+    }
+    if (hasBreak){
+      const a = document.getElementById("wiBreakA").value, b = document.getElementById("wiBreakB").value;
+      sc.breaks.push({ id: uid(), name: "Extra break", start: a, end: b, away: 1 });
+    }
+    const bits = [];
+    if (dp) bits.push((dp > 0 ? "+" : "") + dp + " people");
+    if (n != null) bits.push("norm " + n + "/h");
+    if (hasBreak) bits.push("extra break");
+    Log.add("event", WhatIf.proc, PROC[WhatIf.proc].name + " what-if applied", bits.join(" · "), now);
+    touch(); UIRenderer.flash(WhatIf.proc); WhatIf.reset();
+    Toast.show("Changes applied", PROC[WhatIf.proc].name + " · " + bits.join(" · "));
+  },
+  reset(){
+    document.getElementById("wiPeople").value = 0;
+    document.getElementById("wiNorm").value = "";
+    document.getElementById("wiBreakA").value = "";
+    document.getElementById("wiBreakB").value = "";
+  }
+};
+
+/* ---------------------------------------------------------------- Export */
+const ExportManager = {
+  stamp(){ const p = Time.parts(Date.now()); return p.year + pad(p.month) + pad(p.day) + "-" + pad(p.hour) + pad(p.minute); },
+  payload(){
+    const now = Date.now(), w = shiftWindow();
+    return {
+      exportedAt: new Date(now).toISOString(),
+      shift: { type: state.shift.type, start: state.shift.start, end: state.shift.end, windowStart: new Date(w.start).toISOString(), windowEnd: new Date(w.end).toISOString() },
+      processes: Object.fromEntries(PROCS.map(p => {
+        const sc = state.processes[p.key], m = Metrics.cache[p.key] || {};
+        return [p.key, {
+          name: p.name, basePeople: sc.basePeople, baseNorm: sc.baseNorm, baseline: sc.baseline,
+          snapshots: sc.snapshots.map(s => ({ time: Time.hms(s.t), iso: new Date(s.t).toISOString(), remaining: s.remaining })),
+          events: sc.events.map(e => ({ time: Time.hm(e.t), iso: new Date(e.t).toISOString(), peopleDelta: e.peopleDelta, peopleSet: e.peopleSet, norm: e.norm })),
+          breaks: sc.breaks,
+          live: { remaining: Math.round(m.rem || 0), people: m.people, norm: m.norm, capacityPerMin: Math.round(m.ratePerMin || 0), status: m.status, finish: m.finish ? Time.hms(m.finish) : null }
+        }];
+      })),
+      workforceFlow: {
+        enabled: !!(state.flow && state.flow.enabled),
+        sources: state.flow ? state.flow.sources : null,
+        planned: WorkforceFlowEngine.transfers().map(t => ({
+          from: t.from, finishes: Time.hms(t.finish), movesAt: Time.hms(t.at), people: t.people
+        }))
+      },
+      log: state.log.map(e => ({ time: Time.hms(e.t), type: e.type, process: e.proc, title: e.title, detail: e.detail }))
+    };
+  },
+  csv(){
+    const w = shiftWindow(), now = Date.now();
+    const rows = [["timestamp", "process", "remaining", "people", "effective_people", "norm", "capacity_per_min", "status", "projected_finish"]];
+    for (const p of PROCS){
+      const sc = SC(p.key);
+      if (!sc.snapshots.length) continue;
+      const from = Math.min(sc.snapshots[0].t, w.start);
+      const to = Math.max(now, w.end);
+      for (let t = from; t <= to; t += 5 * 60e3){
+        const rem = CalculationEngine.remainingAt(sc, t);
+        const people = StaffingEventManager.peopleAt(sc, t), norm = StaffingEventManager.normAt(sc, t), f = BreakEngine.factorAt(sc, t);
+        const fin = CalculationEngine.finishFrom(sc, t, rem);
+        rows.push([Time.hms(t), p.name, Math.round(rem), people, (people * f).toFixed(1), norm, Math.round(people * norm * f / 60), CalculationEngine.statusAt(sc, t), fin ? Time.hms(fin) : ""]);
+        if (rem <= 0) break;
+      }
+    }
+    return rows.map(r => r.join(",")).join("\n");
+  },
+  json(){ ExportManager.deliver("flowboard-" + ExportManager.stamp() + ".json", JSON.stringify(ExportManager.payload(), null, 2), "Shift export (JSON)"); },
+  csvExport(){ ExportManager.deliver("flowboard-" + ExportManager.stamp() + ".csv", ExportManager.csv(), "Shift export (CSV)"); },
+  deliver(filename, text, title){
+    Modal.open(
+      '<h3>' + title + '</h3><p class="sub">Download the file, or copy the contents if downloads are blocked.</p>' +
+      '<textarea id="expBox" style="width:100%;height:240px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.34);color:var(--ink-2);padding:12px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical"></textarea>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Close</button><button class="btn" data-x="copy">Copy</button><button class="btn primary" data-x="dl">Download</button></div>',
+      el => {
+        el.querySelector("#expBox").value = text;
+        el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+        el.querySelector('[data-x="copy"]').onclick = async () => {
+          try { await navigator.clipboard.writeText(text); Toast.show("Copied", filename); }
+          catch (e){ el.querySelector("#expBox").select(); Toast.show("Select and copy", "Clipboard access was blocked.", "err"); }
+        };
+        el.querySelector('[data-x="dl"]').onclick = () => {
+          try {
+            const blob = new Blob([text], { type: "text/plain" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob); a.download = filename;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            Toast.show("Download started", filename);
+          } catch (e){ Toast.show("Download blocked", "Copy the text instead.", "err"); }
+        };
+      }
+    );
+  }
+};
+
+/* ---------------------------------------------------------------- Fullscreen */
+const FullscreenManager = {
+  toggle(){
+    if (document.fullscreenElement) document.exitFullscreen();
+    else (document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen() : Promise.reject())
+      .catch(() => Toast.show("Full screen unavailable", "Press F11 for the same effect.", "err"));
+  },
+  init(){
+    const sync = () => {
+      const on = !!document.fullscreenElement;
+      document.body.classList.toggle("fs", on);
+      if (on && !state.ui.controlRoom) ControlRoom.set(true);
+      setTimeout(() => ChartEngine.draw(Date.now()), 120);
+    };
+    document.addEventListener("fullscreenchange", sync);
+  }
+};
+const ControlRoom = {
+  set(on){
+    state.ui.controlRoom = on;
+    document.body.classList.toggle("cr", on);
+    document.getElementById("btnControlRoom").setAttribute("aria-pressed", String(on));
+    touch();
+    setTimeout(() => ChartEngine.draw(Date.now()), 120);
+  },
+  toggle(){ ControlRoom.set(!state.ui.controlRoom); }
+};
+</script>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------------- Render loop */
+let lastSlow = 0, lastChart = 0;
+
+function renderSlow(now){
+  for (const p of PROCS){
+    const sc = SC(p.key), m = Metrics.cache[p.key], r = UIRenderer.refs[p.key], f = r.f;
+    r.status.dataset.s = m.status;
+    f.status.textContent = m.status;
+    r.card.classList.toggle("done", m.status === "COMPLETED");
+
+    f.people.textContent = nf(m.people);
+    f.stepPeople.textContent = nf(p.key === "filling" ? StaffingEventManager.peopleAt(state.processes.filling, now) : m.people);
+    f.norm.textContent = nf(m.norm);
+    f.rate.textContent = nf(m.ratePerMin);
+    const onBreak = m.factor < 1;
+    f.effective.textContent = onBreak
+      ? "effective " + nf1(m.effective) + " · " + Math.round(m.factor * 100) + "%"
+      : "all working";
+    r.card.querySelector('[data-f="effective"]').parentElement.classList.toggle("warn", onBreak);
+    if (p.key === "filling"){
+      const moved = WorkforceFlowEngine.transferredPeopleAt(now);
+      if (moved > 0 && !onBreak) f.effective.textContent = "incl. " + moved + " handed over";
+      else if (moved > 0 && onBreak) f.effective.textContent = "effective " + nf1(m.effective) + " · incl. " + moved + " moved";
+    }
+    const nx = nextChangeFor(p.key, now);
+    f.next.textContent = nx.text;
+    f.next.className = "nextline " + nx.cls;
+
+    if (!sc.snapshots.length){ f.deadline.textContent = ""; f.deadline.className = "nextline"; }
+    else if (m.rem <= 0.5){
+      f.deadline.textContent = "Finished before the " + Time.hm(m.deadline) + " deadline";
+      f.deadline.className = "nextline spare";
+    } else if (m.finish != null && m.finish <= m.deadline){
+      f.deadline.textContent = "Deadline " + Time.hm(m.deadline) + " · " + durHMS(m.deadline - m.finish).slice(0, 5) + " to spare";
+      f.deadline.className = "nextline spare";
+    } else {
+      f.deadline.textContent = "Deadline " + Time.hm(m.deadline) + " · " + nf(m.remAtDeadline) + " would still be open";
+      f.deadline.className = "nextline late";
+    }
+    f.bar.parentElement.classList.toggle("idle", !(m.ratePerMin > 0));
+    f.pickedSub.textContent = onBreak ? (m.breaks[0] ? m.breaks[0].name : "on break") : "this shift";
+
+    if (!sc.snapshots.length){
+      f.finish.textContent = "--:--"; f.countdown.textContent = "waiting for workload";
+    } else if (m.status === "COMPLETED"){
+      f.finish.textContent = "DONE"; f.countdown.textContent = "workload cleared";
+    } else if (m.finish){
+      f.finish.textContent = Time.hmRounded(m.finish);
+      f.countdown.textContent = "finishing in " + durHMS(m.finish - now);
+    } else {
+      f.finish.textContent = "—";
+      f.countdown.textContent = m.people <= 0 ? "no people assigned" : "no finish at this rate";
+    }
+  }
+  /* record hand-overs the moment they actually happen */
+  if (state.flow && state.flow.enabled){
+    for (const tr of WorkforceFlowEngine.transfers()){
+      const tag = tr.from + "@" + Math.round(tr.at / 60000);
+      if (tr.at <= now && !state.flow.logged.includes(tag)){
+        state.flow.logged.push(tag);
+        Log.add("people", "filling", PROC[tr.from].name + " finished — " + tr.people + " people to Filling",
+          "Filling now " + StaffingEventManager.peopleAt(SC("filling"), now) + " people", tr.at);
+        touch(); UIRenderer.flash("filling");
+        Toast.show("Hand-over", tr.people + " people moved from " + PROC[tr.from].name + " to Filling");
+      }
+    }
+  }
+  UIRenderer.renderRail(now);
+  WhatIf.update(now);
+  document.getElementById("liveText").textContent = state.shift.startedAt ? "LIVE · CALCULATING" : "STANDBY";
+}
+
+function frame(){
+  const now = Date.now();
+  const p = Time.parts(now);
+  document.getElementById("clock").innerHTML = pad(p.hour) + ":" + pad(p.minute) + "<small>:" + pad(p.second) + "</small>";
+
+  if (now - lastSlow >= 1000){ Metrics.recompute(now); renderSlow(now); lastSlow = now; }
+  if (now - lastChart >= 2500){ ChartEngine.draw(now); lastChart = now; }
+
+  for (const pr of PROCS){
+    const sc = SC(pr.key), r = UIRenderer.refs[pr.key], f = r.f;
+    const rem = sc.snapshots.length ? CalculationEngine.remainingAt(sc, now) : 0;
+    const shown = AnimationEngine.lerp(pr.key + ":rem", rem);
+    f.remaining.textContent = nf(shown);
+    const base = sc.baseline || 0;
+    const done = Math.max(0, base - shown);
+    const pct = base > 0 ? clamp(done / base * 100, 0, 100) : 0;
+    f.pct.textContent = nf1(pct) + "%";
+    f.bar.style.width = pct.toFixed(2) + "%";
+    f.produced.textContent = nf(done);
+    f.doneOf.textContent = base > 0 ? nf(done) + " of " + nf(base) + " picked" : "no workload entered";
+    const m = Metrics.cache[pr.key];
+    if (m && m.finish && rem > 0.5) f.countdown.textContent = "finishing in " + durHMS(m.finish - now);
+
+    /* live counting bar: articles produced inside the current minute */
+    if (m){
+      const intoMinute = (now % 60000) / 60000;
+      const picked = m.ratePerMin * intoMinute;
+      f.flow.style.width = (rem > 0.5 && m.ratePerMin > 0 ? intoMinute * 100 : 0).toFixed(1) + "%";
+      f.flowNum.textContent = rem > 0.5 ? nf(picked) : "0";
+      f.flowLbl.textContent = rem <= 0.5 ? "workload cleared"
+        : m.ratePerMin <= 0 ? "no production — " + (m.status === "BREAK" ? "break" : "no people")
+        : "picked this minute · " + nf(m.ratePerMin) + "/min";
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------------------------------------------------------------- Setup flow */
+function readSetupNumber(id, label, max){
+  const el = document.getElementById(id);
+  const v = +el.value;
+  if (el.value === "" || !isFinite(v) || v < 0 || v > max){
+    el.closest(".field").classList.add("invalid");
+    el.closest(".field").querySelector(".err").textContent = label;
+    return null;
+  }
+  el.closest(".field").classList.remove("invalid");
+  return v;
+}
+function startShift(){
+  const s = document.getElementById("sStart").value, e = document.getElementById("sEnd").value;
+  const ms = Time.parseHM(s), me = Time.parseHM(e);
+  const fs = document.getElementById("sStart").closest(".field"), fe = document.getElementById("sEnd").closest(".field");
+  fs.classList.toggle("invalid", ms == null);
+  fe.classList.toggle("invalid", me == null || me === ms);
+  if (ms == null || me == null || me === ms){ Toast.show("Check the shift times", "Start and end must be valid and different.", "err"); return; }
+  state.shift.start = s; state.shift.end = e;
+  state.shift.day = Time.today();
+
+  const vals = {};
+  let bad = false;
+  for (const p of PROCS){
+    const w = readSetupNumber("su-w-" + p.key, "Enter 0 or more articles.", 1e9);
+    const pe = readSetupNumber("su-p-" + p.key, "Enter 0–999 people.", 999);
+    const n = readSetupNumber("su-n-" + p.key, "Enter a norm of 0–5000.", 5000);
+    if (w == null || pe == null || n == null){ bad = true; continue; }
+    vals[p.key] = { w, p: pe, n };
+  }
+  if (bad){ Toast.show("Check the starting numbers", "Some values are missing or out of range.", "err"); return; }
+
+  const now = Date.now();
+  for (const p of PROCS){
+    const sc = state.processes[p.key], v = vals[p.key];
+    sc.basePeople = Math.round(v.p);
+    sc.baseNorm = Math.round(v.n);
+    sc.events = [];
+    sc.snapshots = [];
+    sc.baseline = 0;
+    WorkloadSnapshotManager.add(sc, now, v.w);
+    state.draft[p.key] = { workload: v.w, people: v.p, norm: v.n };
+  }
+  state.shift.startedAt = now;
+  state.log = [];
+  Log.add("shift", null, state.shift.type + " shift started", s + "–" + e + " · " +
+    PROCS.map(pr => PROC[pr.key].name.split(" ")[0] + " " + nf(vals[pr.key].w)).join(" · "), now);
+  touch();
+  document.getElementById("setup").classList.remove("open");
+  AnimationEngine.disp = {};
+  Metrics.recompute(now); renderSlow(now); ChartEngine.draw(now);
+  Toast.show("Shift started", state.shift.type + " · " + s + "–" + e);
+}
+
+function applyShiftType(type){
+  state.shift.type = type;
+  if (type !== "CUSTOM"){
+    state.shift.start = SHIFT_DEFAULTS[type].start;
+    state.shift.end = SHIFT_DEFAULTS[type].end;
+    for (const p of PROCS) state.processes[p.key].breaks = defaultBreaks(type, p.key);
+  }
+  touch(); UIRenderer.syncSetup();
+  if (type !== "CUSTOM") Toast.show(type + " defaults loaded", "Shift window and breaks updated.");
+}
+
+/* ---------------------------------------------------------------- Init */
+function init(){
+  state = StorageManager.load() || freshState("AM");
+  if (!state.draft) state.draft = freshState(state.shift.type).draft;
+  if (!state.flow) state.flow = defaultFlow();
+  if (!state.flow.logged) state.flow.logged = [];
+  if (state.ui.locusHalf === undefined) state.ui.locusHalf = false;
+  Modal.init();
+  UIRenderer.buildSetup();
+  UIRenderer.buildBoard();
+  UIRenderer.renderLog();
+  FullscreenManager.init();
+
+  const stale = state.shift.startedAt && Date.now() > shiftWindow().end + 4 * 3600e3;
+  if (state.shift.startedAt && !stale) document.getElementById("setup").classList.remove("open");
+  if (stale) setTimeout(() => Toast.show("Previous shift restored", "It ended more than 4 hours ago — start a new shift when you're ready."), 900);
+  if (state.ui.controlRoom) ControlRoom.set(true);
+  document.querySelectorAll("[data-scale]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.scale === state.ui.chartScale)));
+
+  document.querySelectorAll("[data-shift]").forEach(b => b.onclick = () => applyShiftType(b.dataset.shift));
+  document.getElementById("btnStartShift").onclick = startShift;
+  document.getElementById("btnLoadBreaks").onclick = () => {
+    for (const p of PROCS) state.processes[p.key].breaks = defaultBreaks(state.shift.type, p.key);
+    touch(); UIRenderer.syncSetup(); Toast.show("Breaks reloaded", state.shift.type + " defaults for all three areas.");
+  };
+  document.getElementById("btnSettings").onclick = Actions.settings;
+  document.getElementById("btnNewShift").onclick = Actions.newShift;
+  document.getElementById("btnNewShiftTop").onclick = Actions.newShift;
+  document.getElementById("btnExportJson").onclick = ExportManager.json;
+  document.getElementById("btnExportCsv").onclick = ExportManager.csvExport;
+  document.getElementById("btnFullscreen").onclick = FullscreenManager.toggle;
+  document.getElementById("btnExitFs").onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); };
+  document.getElementById("btnControlRoom").onclick = ControlRoom.toggle;
+  document.getElementById("btnAddEventQuick").onclick = () => Actions.futureChanges("picking");
+
+  document.querySelectorAll("[data-scale]").forEach(b => b.onclick = () => {
+    state.ui.chartScale = b.dataset.scale; touch();
+    document.querySelectorAll("[data-scale]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    ChartEngine.draw(Date.now());
+  });
+  document.querySelectorAll("#wiSeg button").forEach(b => b.onclick = () => {
+    WhatIf.proc = b.dataset.p;
+    document.querySelectorAll("#wiSeg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    WhatIf.update(Date.now());
+  });
+  ["wiPeople", "wiNorm", "wiBreakA", "wiBreakB"].forEach(id => document.getElementById(id).oninput = () => WhatIf.update(Date.now()));
+  document.getElementById("wiApply").onclick = WhatIf.apply;
+  document.getElementById("wiReset").onclick = () => { WhatIf.reset(); WhatIf.update(Date.now()); };
+
+  const wrap = document.getElementById("chartWrap");
+  wrap.addEventListener("mousemove", ChartEngine.hover);
+  wrap.addEventListener("mouseleave", () => document.getElementById("chartTip").style.opacity = 0);
+  window.addEventListener("resize", () => ChartEngine.draw(Date.now()));
+
+  Metrics.recompute(Date.now());
+  renderSlow(Date.now());
+  wrap.classList.add("intro");
+  ChartEngine.draw(Date.now());
+  setTimeout(() => wrap.classList.remove("intro"), 1700);
+  requestAnimationFrame(frame);
+
+  /* --------------------------------------------------------------
+     Self-test of the calculation engine (see brief §51 and §52).
+     Runs silently; results go to the console.
+     -------------------------------------------------------------- */
+  try { selfTest(); } catch (e) { console.warn("self-test skipped", e); }
+}
+
+function selfTest(){
+  const mk = (people, norm, breaks) => ({
+    key: "test", basePeople: people, baseNorm: norm, baseline: 0,
+    snapshots: [], events: [], breaks: breaks || [], _extraBreak: null
+  });
+  const t0 = Date.now();
+  // §51 — 1,422 left, 41 people, norm 300 -> 205/min -> 6.9366 min
+  const a = mk(41, 300); a.snapshots.push({ t: t0, remaining: 1422 });
+  const fin = CalculationEngine.finishFrom(a, t0, 1422);
+  const mins = (fin - t0) / 60000;
+  console.log("[FLOWBOARD test] finish in", mins.toFixed(4), "min (expect 6.9366) →", Time.hms(fin), "displayed", Time.hmRounded(fin));
+  // §52 — capacity with break factors
+  const b = mk(48, 270);
+  console.log("[FLOWBOARD test] 48×270 = ", CalculationEngine.rateAt(b, t0) * 60, "/min (expect 216)");
+  // §9 — one minute of production
+  const c = mk(48, 270); c.snapshots.push({ t: t0, remaining: 69072 });
+  console.log("[FLOWBOARD test] after 60s:", CalculationEngine.remainingAt(c, t0 + 60000), "(expect 68856)");
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
