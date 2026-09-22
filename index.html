@@ -450,6 +450,13 @@ body.cr .status{font-size:clamp(10px,.85vw,15px);padding:9px 16px}
 .check{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
 .check input{width:18px;height:18px;accent-color:var(--picking)}
 
+/* battery saver: no looping animation, no transitions, flat background */
+body.lowpower *,body.lowpower *::before,body.lowpower *::after{animation:none!important;transition:none!important}
+body.lowpower::before,body.lowpower::after{display:none}
+body.lowpower{background:#F2F4F7}
+body.lowpower .glass{box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.powerseg{display:flex;gap:6px;margin-top:6px}
+
 /* tabs */
 .tabs{display:flex;gap:6px;padding:6px;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow-x:auto}
 .tabs button{appearance:none;border:0;background:transparent;font:inherit;font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--ink-3);
@@ -2539,7 +2546,7 @@ const AnimationEngine = {
   disp: {},
   lerp(key, target, snap){
     const d = AnimationEngine.disp;
-    if (d[key] == null || snap) { d[key] = target; return target; }
+    if (d[key] == null || snap || Power.low) { d[key] = target; return target; }
     const diff = target - d[key];
     if (Math.abs(diff) < 0.45) d[key] = target;
     else d[key] += diff * 0.55;
@@ -2947,10 +2954,21 @@ const Actions = {
         '<button class="btn" data-x="setup">Show setup panel</button>' +
         '<button class="btn" data-x="clearlog">Clear activity log</button>' +
       '</div>' +
+      '<div class="field" style="margin-top:18px"><label>Battery saver</label>' +
+        '<div class="seg powerseg" id="pwSeg">' + [["auto", "Auto (phones)"], ["on", "Always on"], ["off", "Off"]].map(o =>
+          '<button data-pw="' + o[0] + '" aria-pressed="' + (Power.mode === o[0]) + '">' + o[1] + '</button>').join("") + '</div>' +
+        '<em style="font-style:normal;font-size:12px;color:var(--ink-3);margin-top:6px;display:block">Updates once a second, no animations, panels draw only when visible. ' +
+        'Right now: <b>' + (Power.low ? "on" : "off") + '</b>.</em></div>' +
       '<div class="rowbtns"><button class="btn ghost" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>',
       el => {
         el.querySelector('[data-x="cancel"]').onclick = Modal.close;
         el.querySelector('[data-x="setup"]').onclick = () => { document.getElementById("setup").classList.add("open"); UIRenderer.syncSetup(); Modal.close(); };
+        el.querySelectorAll("[data-pw]").forEach(b => b.onclick = () => {
+          Power.set(b.dataset.pw);
+          el.querySelectorAll("[data-pw]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+          el.querySelector(".powerseg + em b").textContent = Power.low ? "on" : "off";
+          Toast.show("Battery saver " + (Power.low ? "on" : "off"), Power.mode === "auto" ? "Automatic: on for phones and tablets." : "");
+        });
         el.querySelector('[data-x="clearlog"]').onclick = () => { state.log = []; touch(); UIRenderer.renderLog(); Toast.show("Activity cleared", "The calculation is unaffected."); };
         el.querySelector('[data-x="ok"]').onclick = () => {
           const s = document.getElementById("stS").value, e = document.getElementById("stE").value;
@@ -3346,16 +3364,24 @@ function renderSlow(now){
 function frame(){
   const now = NOW();
   const p = Time.parts(now);
-  document.getElementById("clock").innerHTML = pad(p.hour) + ":" + pad(p.minute) + "<small>:" + pad(p.second) + "</small>";
+  const clk = pad(p.hour) + ":" + pad(p.minute) + "<small>:" + pad(p.second) + "</small>";
+  const clockEl = document.getElementById("clock");
+  if (clockEl._h !== clk){ clockEl._h = clk; clockEl.innerHTML = clk; }
 
   const real = Date.now(), playing = Plan.active && Plan.speed > 0;
   if (real - lastSlow >= (playing ? 250 : 1000)){
     Metrics.recompute(now); renderSlow(now);
-    FlowView.render(now); SimPanel.render(now);
+    if (Tabs.cur === "main"){
+      if (Vis.on.panelFlow) FlowView.render(now);
+      if (Vis.on.panelSim) SimPanel.render(now);
+    }
     if (Tabs.cur === "refill") RefillView.renderSlow(now);
     lastSlow = real;
   }
-  if (real - lastChart >= (playing ? 1500 : 10000)){ ChartEngine.draw(now); lastChart = real; }
+  if (real - lastChart >= (playing ? 1500 : Power.low ? 30000 : 10000)){
+    if (Tabs.cur === "main" && Vis.on.panelChart) ChartEngine.draw(now);
+    lastChart = real;
+  }
   if (Plan.active) PlanMode.sync();
   if (Tabs.cur === "refill") RefillView.renderFast(now);
 
@@ -3363,32 +3389,34 @@ function frame(){
     const sc = SC(pr.key), r = UIRenderer.refs[pr.key], f = r.f;
     const rem = sc.snapshots.length ? CalculationEngine.remainingAt(sc, now) : 0;
     const shown = AnimationEngine.lerp(pr.key + ":rem", rem);
-    f.remaining.textContent = nf(shown);
+    setText(f.remaining, nf(shown));
     const base = sc.baseline || 0;
     const done = Math.max(0, base - shown);
     const pct = base > 0 ? clamp(done / base * 100, 0, 100) : 0;
-    f.pct.textContent = nf1(pct) + "%";
-    f.bar.style.width = pct.toFixed(2) + "%";
-    f.produced.textContent = nf(done);
-    f.doneOf.textContent = base > 0 ? nf(done) + " of " + nf(base) + " picked" : "no workload entered";
+    setText(f.pct, nf1(pct) + "%");
+    setWidth(f.bar, pct.toFixed(Power.low ? 1 : 2) + "%");
+    setText(f.produced, nf(done));
+    setText(f.doneOf, base > 0 ? nf(done) + " of " + nf(base) + " picked" : "no workload entered");
     const m = Metrics.cache[pr.key];
-    if (m && m.finish && m.finish > now && m.people > 0) f.countdown.textContent = (m.status === "LAST ZONES" ? "last zones · done in " : "finishing in ") + durHMS(m.finish - now);
+    if (m && m.finish && m.finish > now && m.people > 0) setText(f.countdown, "finishing in " + durHMS(m.finish - now));
 
     /* live counting bar: articles produced inside the current minute */
     if (m){
       const intoMinute = (now % 60000) / 60000;
       const picked = m.ratePerMin * intoMinute;
-      f.flow.style.width = (rem > 0.5 && m.ratePerMin > 0 ? intoMinute * 100 : 0).toFixed(1) + "%";
-      f.flowNum.textContent = rem > 0.5 ? nf(picked) : "0";
-      f.flowLbl.textContent = rem <= 0.5 ? "workload cleared"
+      setWidth(f.flow, (rem > 0.5 && m.ratePerMin > 0 ? intoMinute * 100 : 0).toFixed(Power.low ? 0 : 1) + "%");
+      setText(f.flowNum, rem > 0.5 ? nf(picked) : "0");
+      setText(f.flowLbl, rem <= 0.5 ? "workload cleared"
         : m.ratePerMin <= 0 ? "no production — " + (m.status === "BREAK" ? "break" : "no people")
-        : "picked this minute · " + nf(m.ratePerMin) + "/min";
+        : "picked this minute · " + nf(m.ratePerMin) + "/min");
     }
   }
 }
 /* ~5 updates a second is plenty for numbers that move a few articles per
    second, and costs a fraction of a 60 fps loop. Hidden tabs idle at 1 Hz. */
+let loopTimer = null;
 function loop(){
+  loopTimer = null;
   const real = Date.now();
   if (Plan.active && Plan.speed > 0){
     const r = PlanMode.range();
@@ -3396,9 +3424,62 @@ function loop(){
     if (Plan.at >= r.max) Plan.speed = 0;
   }
   lastReal = real;
-  if (!document.hidden) frame();
-  setTimeout(loop, document.hidden ? 1000 : (Plan.active && Plan.speed ? 120 : 200));
+  if (document.hidden) return;                       // stopped; visibilitychange restarts it
+  frame();
+  const playing = Plan.active && Plan.speed > 0;
+  const wait = playing ? (Power.low ? 250 : 120)
+    : Power.low ? 1010 - (Date.now() % 1000)          // wake just after each second tick
+    : 200;
+  loopTimer = setTimeout(loop, wait);
 }
+/** restart the loop right away (after returning to the page, or a mode change) */
+function kick(){
+  if (loopTimer) clearTimeout(loopTimer);
+  lastSlow = 0; lastChart = 0; lastReal = Date.now();
+  loop();
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden){ AnimationEngine.disp = {}; kick(); } });
+
+/* ---------------------------------------------------------------- Battery saver
+   auto = on for phones / tablets (touch screens) and data-saver browsers.   */
+const Power = {
+  KEY: "flowboard.power", mode: "auto", low: false,
+  decide(){
+    try { Power.mode = localStorage.getItem(Power.KEY) || "auto"; } catch (e) {}
+    const touch = !!(window.matchMedia && matchMedia("(pointer:coarse)").matches);
+    const saver = !!(navigator.connection && navigator.connection.saveData);
+    Power.low = Power.mode === "on" || (Power.mode === "auto" && (touch || saver));
+    document.body.classList.toggle("lowpower", Power.low);
+  },
+  set(mode){
+    Power.mode = mode;
+    try { localStorage.setItem(Power.KEY, mode); } catch (e) {}
+    Power.decide(); AnimationEngine.disp = {}; kick();
+  }
+};
+/* only touch the DOM when the value really changed */
+function setText(el, v){ if (el && el._t !== v){ el._t = v; el.textContent = v; } }
+function setWidth(el, v){ if (el && el._w !== v){ el._w = v; el.style.width = v; } }
+/* heavy panels draw only while they are on screen */
+const Vis = {
+  on: { panelFlow: true, panelSim: true, panelChart: true },
+  init(){
+    if (!("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries){
+        const was = Vis.on[e.target.id];
+        Vis.on[e.target.id] = e.isIntersecting;
+        if (e.isIntersecting && !was){
+          const now = NOW();
+          if (e.target.id === "panelFlow") FlowView.render(now, true);
+          if (e.target.id === "panelSim") SimPanel.render(now, true);
+          if (e.target.id === "panelChart") ChartEngine.draw(now);
+        }
+      }
+    }, { rootMargin: "120px" });
+    for (const id in Vis.on){ const el = document.getElementById(id); if (el) io.observe(el); }
+  }
+};
 
 /* ---------------------------------------------------------------- Setup flow */
 function readSetupNumber(id, label, max){
@@ -3529,14 +3610,16 @@ function init(){
   wrap.classList.add("intro");
   ChartEngine.draw(NOW());
   setTimeout(() => wrap.classList.remove("intro"), 1700);
+  Power.decide();
   SimPanel.init();
   PlanMode.init();
   Notes.init();
   Tabs.init();
+  Vis.init();
   document.getElementById("btnFlowRules").onclick = Actions.flowSettings;
   FlowView.render(NOW(), true); SimPanel.render(NOW(), true);
   window.addEventListener("resize", () => { FlowView.render(NOW(), true); });
-  loop();
+  kick();
 
   /* --------------------------------------------------------------
      Self-test of the calculation engine (see brief §51 and §52).
