@@ -412,7 +412,7 @@ body::after{
    ============================================================ */
 .exitfs{position:fixed;top:calc(16px + var(--safe-t));right:16px;z-index:70;display:none}
 body.fs .exitfs{display:inline-flex}
-body.cr .setup,body.cr #panelChart,body.cr #panelLog,body.cr #panelWhatIf,body.cr #panelTimeline,body.cr #panelSim,
+body.cr #btnMsg,body.cr .setup,body.cr #panelChart,body.cr #panelLog,body.cr #panelWhatIf,body.cr #panelTimeline,body.cr #panelSim,
 body.cr .actions,body.cr .card-title span,body.cr .toolbar .btn:not(#btnControlRoom):not(#btnFullscreen){display:none!important}
 body.cr .board{flex:1;align-content:stretch}
 body.cr .shell{min-height:100vh;min-height:100dvh}
@@ -575,6 +575,110 @@ body.cr .rf-kpi b{font-size:clamp(30px,3.2vw,58px)}
   .rf-prios,.rf-kpis{grid-template-columns:1fr}
 }
 @media (max-width:760px){ .rf-grid{grid-template-columns:1fr 1fr} .rf-kpis{grid-template-columns:1fr 1fr} }
+
+/* ============================================================ CUSTOMIZATION */
+html[data-density="compact"]{--pad:clamp(11px,1vw,18px)}
+html[data-density="compact"] .card{gap:10px}
+html[data-density="compact"] .stat{padding:8px 10px}
+html[data-density="compact"] .board{gap:10px}
+html[data-density="compact"] .panel-head{margin-bottom:10px}
+html[data-density="compact"] .actions .btn{padding-top:8px;padding-bottom:8px}
+html[data-radius="sharp"]{--r-xs:3px;--r-sm:5px;--r-md:7px;--r-lg:9px;--r-xl:11px}
+html[data-radius="round"]{--r-xs:12px;--r-sm:16px;--r-md:24px;--r-lg:32px;--r-xl:40px}
+html[data-font="rounded"] body{font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round","Segoe UI Variable Display","Segoe UI",sans-serif}
+html[data-font="condensed"] body{font-family:"Roboto Condensed","Arial Narrow","Helvetica Neue",sans-serif-condensed,"Segoe UI",sans-serif;font-stretch:condensed}
+html[data-font="mono"] body{font-family:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Consolas,monospace}
+html[data-font="classic"] body{font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif}
+html[data-weight="regular"] .hero .big,html[data-weight="regular"] .rfp-big{font-weight:500}
+html[data-weight="bold"] .hero .big,html[data-weight="bold"] .rfp-big{font-weight:800}
+html[data-bg="plain"] body::before,html[data-bg="plain"] body::after{display:none}
+html[data-bg="nodots"] body::after{display:none}
+html[data-shadow="none"]{--shadow:0 0 0 1px var(--line);--shadow-lift:0 0 0 1px var(--line-hi);--shadow-pop:0 20px 50px -20px rgba(0,0,0,.35)}
+html[data-shadow="strong"]{--shadow:0 2px 4px rgba(16,24,40,.08),0 22px 44px -18px rgba(16,24,40,.45);--shadow-lift:0 4px 8px rgba(16,24,40,.1),0 34px 60px -22px rgba(16,24,40,.55)}
+.user-hidden{display:none!important}
+.st-tabs{margin-bottom:18px}
+.st-sec{display:flex;flex-direction:column;gap:14px}
+.st-sec h4{margin:4px 0 0;font-size:11px;letter-spacing:.14em;color:var(--ink-3);font-weight:800}
+.st-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.st-row > label{min-width:120px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.st-colors{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.st-color{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.st-color span{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--ink-3)}
+.st-color input{width:100%;height:38px;border:0;border-radius:10px;padding:0;background:none;cursor:pointer}
+.st-pal{display:flex;gap:8px;flex-wrap:wrap}
+.st-pal button{appearance:none;display:flex;align-items:center;gap:6px;padding:6px 10px 6px 7px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:12px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.st-pal button i{display:flex}
+.st-pal button i b{width:13px;height:13px;border-radius:50%;margin-left:-4px;border:2px solid var(--surface)}
+.st-pal button i b:first-child{margin-left:0}
+.st-toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.st-toggles label{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:13px;font-weight:700;cursor:pointer}
+.st-toggles input{width:17px;height:17px;accent-color:var(--brand-2)}
+.st-names{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.st-code{width:100%;min-height:70px;border:1.5px solid var(--line-hi);border-radius:12px;padding:10px;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--surface-2);color:var(--ink);resize:vertical;word-break:break-all}
+@media (max-width:700px){ .st-colors{grid-template-columns:1fr 1fr} .st-toggles,.st-names{grid-template-columns:1fr} }
+
+/* ============================================================ BRANDING / BANNER / BREAK CHIP */
+.brandlogo{height:42px;max-width:170px;object-fit:contain;display:block;flex:none}
+.brand.haslogo .mark{display:none}
+body.cr .brandlogo{height:clamp(44px,3.4vw,70px);max-width:280px}
+.logo-drop{display:flex;align-items:center;gap:14px;padding:14px;border:2px dashed var(--line-hi);border-radius:16px;background:var(--surface-2)}
+.logo-drop .pv{width:150px;height:60px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;flex:none}
+.logo-drop .pv img{max-width:140px;max-height:52px;object-fit:contain}
+.logo-drop .pv span{font-size:11px;color:var(--ink-4);font-weight:700}
+.brkchip{display:none;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;font-size:11.5px;font-weight:800;letter-spacing:.04em;white-space:nowrap;
+  background:rgba(239,138,18,.12);color:#8A5000;border:1px solid rgba(239,138,18,.3);font-variant-numeric:tabular-nums}
+.brkchip.on{display:inline-flex}
+.brkchip.now{background:var(--warn);color:#fff;border-color:var(--warn)}
+html[data-theme="dark"] .brkchip:not(.now),html[data-theme="control"] .brkchip:not(.now){color:#FFB65C}
+.hallmsg{display:flex;align-items:center;gap:14px;padding:14px 20px;border-radius:var(--r-lg);color:#fff;font-weight:800;
+  font-size:clamp(16px,1.4vw,24px);letter-spacing:.01em;box-shadow:var(--shadow);background:var(--hm,#E0333B)}
+.hallmsg[hidden]{display:none}
+.hallmsg .ic{font-size:1.4em}
+.hallmsg .tx{flex:1;min-width:0;word-break:break-word}
+.hallmsg small{font-size:.55em;font-weight:700;opacity:.85;white-space:nowrap}
+.hallmsg button{appearance:none;border:0;background:rgba(255,255,255,.2);color:#fff;border-radius:10px;width:34px;height:34px;font-size:18px;cursor:pointer}
+body.cr .hallmsg{font-size:clamp(22px,2.4vw,46px);padding:clamp(14px,1.4vw,26px) clamp(18px,2vw,34px)}
+body.cr .hallmsg button{display:none}
+.kbd{display:inline-block;min-width:26px;text-align:center;padding:3px 7px;border-radius:7px;border:1px solid var(--line-hi);background:var(--surface-2);
+  font-weight:800;font-size:12px;box-shadow:0 2px 0 var(--line-hi)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:9px 14px;align-items:center;font-size:13.5px;font-weight:600}
+
+/* ============================================================ REPORT */
+.rp-actions{display:flex;gap:8px;flex-wrap:wrap}
+.rp{border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:clamp(18px,2vw,32px);box-shadow:var(--shadow);margin-bottom:18px}
+.rp-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-bottom:16px;border-bottom:3px solid var(--brand);margin-bottom:18px}
+.rp-head img{height:52px;max-width:200px;object-fit:contain}
+.rp-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.rp-head p{margin:3px 0 0;color:var(--ink-3);font-weight:600;font-size:13px}
+.rp-head .rp-stamp{margin-left:auto;text-align:right;font-size:12px;color:var(--ink-3);font-weight:700}
+.rp-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:18px}
+.rp-a{border:1px solid var(--line);border-radius:16px;padding:14px;border-top:5px solid var(--accent)}
+.rp-a h4{margin:0 0 8px;font-size:12px;letter-spacing:.13em;font-weight:800}
+.rp-a .big{font-size:30px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.rp-a dl{display:grid;grid-template-columns:1fr auto;gap:5px 10px;margin:10px 0 0;font-size:12.5px}
+.rp-a dt{color:var(--ink-3);font-weight:600}
+.rp-a dd{margin:0;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.rp-a .ok{color:var(--filling)} .rp-a .bad{color:var(--crit)}
+.rp h5{margin:16px 0 8px;font-size:11px;letter-spacing:.14em;color:var(--ink-3);font-weight:800}
+.rp ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.6}
+.rp-log{font-size:12.5px;display:grid;grid-template-columns:60px 1fr;gap:4px 12px;font-variant-numeric:tabular-nums}
+.rp-log span:nth-child(odd){color:var(--ink-3);font-weight:700}
+.hist{display:flex;flex-direction:column;gap:8px}
+.hrow{display:grid;grid-template-columns:130px 60px 1fr auto;gap:12px;align-items:center;padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);font-size:13px;font-weight:600;cursor:pointer}
+.hrow:hover{background:var(--surface-2)}
+.hrow b{font-variant-numeric:tabular-nums}
+.hrow .hs{display:flex;gap:10px;flex-wrap:wrap;color:var(--ink-3);font-size:12px}
+.hrow .hs i{font-style:normal;font-weight:800;color:var(--ink-2)}
+@media print{
+  @page{margin:12mm}
+  html,body{background:#fff!important}
+  body::before,body::after{display:none!important}
+  body *{visibility:hidden!important}
+  #rpPrint,#rpPrint *{visibility:visible!important}
+  #rpPrint{position:absolute;left:0;top:0;width:100%;border:0;box-shadow:none;padding:0;background:#fff!important;color:#10141A!important}
+  #rpPrint *{color:#10141A!important;background:transparent!important;box-shadow:none!important}
+  #rpPrint .rp-a{border:1px solid #ccc!important;border-top:5px solid var(--accent)!important;break-inside:avoid}
+}
 
 /* ============================================================ NOTES */
 .nt-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
@@ -829,13 +933,15 @@ body.planning .live i{background:var(--brand-2)}
     <div class="clockwrap">
       <div class="clock num" id="clock" aria-live="off">--:--<small>:--</small></div>
       <div class="shiftbadge" id="shiftBadge">AM SHIFT</div>
+      <div class="brkchip" id="brkChip"></div>
     </div>
 
     <div class="toolbar">
       <button class="btn" id="btnControlRoom" aria-pressed="false" title="Enlarge everything for a warehouse monitor">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 20h8M12 17v3"/></svg>Numbers only</button>
       <button class="btn primary" id="btnFullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg>Full screen</button>
-      <button class="btn" id="btnTheme" title="Change theme"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Theme</button>
+      <button class="btn" id="btnMsg" title="Show a message on the hall monitor"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Message</button>
+      <button class="btn" id="btnTheme" title="Change theme"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>Customize</button>
       <button class="btn" id="btnPlan" title="Simulate tomorrow or any other day without touching the live shift"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Plan ahead</button>
       <button class="btn danger" id="btnNewShiftTop"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4"/></svg>New shift</button>
       <button class="btn" id="btnSettings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg>Settings</button>
@@ -857,12 +963,15 @@ body.planning .live i{background:var(--brand-2)}
     <button class="btn sm" id="planExit">Back to live</button>
   </div>
 
+  <div class="hallmsg" id="hallMsg" hidden><span class="ic">📢</span><span class="tx" id="hallTx"></span><small id="hallUntil"></small><button id="hallX" aria-label="Hide message">×</button></div>
+
   <nav class="tabs" id="tabBar" role="tablist" aria-label="Pages">
     <button role="tab" data-tab="main" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
     <button role="tab" data-tab="refill" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Refiller tasks</button>
     <button role="tab" data-tab="notes" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4M8 12h8M8 16h6"/></svg>Notes <span class="tcount" id="noteCount">0</span></button>
     <button role="tab" data-tab="tools" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h4M16 15v3"/></svg>Tools</button>
     <button role="tab" data-tab="perf" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16l4-5 3 3 5-7"/><path d="M15 7h3v3"/></svg>Performance</button>
+    <button role="tab" data-tab="report" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/></svg>Report</button>
   </nav>
 
   <!-- ===================== SETUP ===================== -->
@@ -1010,6 +1119,9 @@ body.planning .live i{background:var(--brand-2)}
 
   <!-- ===================== PERFORMANCE ===================== -->
   <section class="panel glass tabpane" id="tabPerf" hidden></section>
+
+  <!-- ===================== REPORT ===================== -->
+  <section class="panel glass tabpane" id="tabReport" hidden></section>
 </div>
 
 <button class="btn exitfs" id="btnExitFs"><svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 20v-5h5M20 9h-5V4M4 15h5v5"/></svg>Exit full screen</button>
@@ -1806,6 +1918,7 @@ const UIRenderer = {
       '</article>';
     }).join("");
     UIRenderer.refs = {};
+    if (typeof Custom !== "undefined" && Custom.s) setTimeout(Custom.applyLayout, 0);
     for (const p of PROCS){
       const card = document.getElementById("card-" + p.key);
       const r = { card, f: {} };
@@ -2989,10 +3102,470 @@ const Perf = {
   }
 };
 
+/* ---------------------------------------------------------------- Branding: your own logo + site name */
+const Brand = {
+  KEY: "flowboard.brand", logo: null, site: "",
+  load(){ try { const b = JSON.parse(localStorage.getItem(Brand.KEY) || "{}"); Brand.logo = b.logo || null; Brand.site = b.site || ""; } catch (e) {} },
+  save(){ try { localStorage.setItem(Brand.KEY, JSON.stringify({ logo: Brand.logo, site: Brand.site })); } catch (e) { Toast.show("Logo too large", "Try a smaller image.", "err"); } },
+  apply(){
+    const br = document.querySelector(".brand");
+    let img = br.querySelector(".brandlogo");
+    if (Brand.logo){
+      if (!img){ img = document.createElement("img"); img.className = "brandlogo"; img.alt = "Logo"; br.insertBefore(img, br.firstChild); }
+      img.src = Brand.logo; br.classList.add("haslogo");
+    } else { if (img) img.remove(); br.classList.remove("haslogo"); }
+    br.querySelector("p").textContent = Brand.site || "Live Warehouse Control";
+  },
+  /** read an image the user picked, scale it down so it stays small in storage */
+  read(file, done){
+    if (!file || !/^image\//.test(file.type)){ Toast.show("Not an image", "Pick a PNG, JPG or SVG file.", "err"); return; }
+    const fr = new FileReader();
+    fr.onload = () => {
+      if (file.type === "image/svg+xml" && fr.result.length < 300000){ done(fr.result); return; }
+      const im = new Image();
+      im.onload = () => {
+        const sc = Math.min(1, 480 / im.width, 160 / im.height);
+        const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.width * sc)); c.height = Math.max(1, Math.round(im.height * sc));
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        done(c.toDataURL("image/png"));
+      };
+      im.onerror = () => Toast.show("Could not read image", "", "err");
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  },
+  section(){
+    return '<h3 style="margin-top:22px">Branding</h3><p class="sub">Upload your company logo (PNG, JPG or SVG from your brand files). It appears in the header, full screen and on reports. Stored on this device only.</p>' +
+      '<div class="logo-drop"><div class="pv" id="lgPv">' + (Brand.logo ? '<img src="' + Brand.logo + '" alt="">' : '<span>no logo</span>') + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;flex:1"><label class="btn sm" style="cursor:pointer;justify-content:center">Upload logo<input type="file" id="lgFile" accept="image/*" hidden></label>' +
+      '<button class="btn sm ghost" id="lgDel"' + (Brand.logo ? "" : " disabled") + '>Remove logo</button></div></div>' +
+      '<div class="field" style="margin-top:12px"><label for="lgSite">Site name under the title</label><input id="lgSite" type="text" maxlength="40" placeholder="Live Warehouse Control" value="' + Notes.esc(Brand.site) + '"></div>';
+  },
+  wire(el){
+    el.querySelector("#lgFile").onchange = e => Brand.read(e.target.files[0], url => {
+      Brand.logo = url; Brand.save(); Brand.apply();
+      el.querySelector("#lgPv").innerHTML = '<img src="' + url + '" alt="">'; el.querySelector("#lgDel").disabled = false;
+      Toast.show("Logo saved", "Shown in the header and on reports.");
+    });
+    el.querySelector("#lgDel").onclick = () => { Brand.logo = null; Brand.save(); Brand.apply(); el.querySelector("#lgPv").innerHTML = "<span>no logo</span>"; el.querySelector("#lgDel").disabled = true; };
+    el.querySelector("#lgSite").oninput = e => { Brand.site = e.target.value.trim(); Brand.save(); Brand.apply(); };
+  }
+};
+
+/* ---------------------------------------------------------------- Customize: look, layout, alerts, branding */
+const DEF_HEX = { picking: "#1D6FF2", groot: "#7B45E8", filling: "#00A46A", brand: "#FFD400" };
+const PALETTES = [
+  { name: "Default", c: { picking: null, groot: null, filling: null, brand: null } },
+  { name: "Ocean", c: { picking: "#0077B6", groot: "#00A6C8", filling: "#2A9D8F", brand: "#FFC300" } },
+  { name: "Sunset", c: { picking: "#E76F51", groot: "#C2185B", filling: "#F4A261", brand: "#FFD166" } },
+  { name: "Forest", c: { picking: "#2E7D32", groot: "#6D4C41", filling: "#00897B", brand: "#C0CA33" } },
+  { name: "High visibility", c: { picking: "#0057FF", groot: "#FF00A8", filling: "#00C853", brand: "#FFEA00" } },
+  { name: "Graphite", c: { picking: "#374151", groot: "#6B7280", filling: "#111827", brand: "#FFD400" } }
+];
+const PANELS = [
+  { k: "flow", sel: "#panelFlow", name: "People flow" }, { k: "timeline", sel: "#panelTimeline", name: "Timeline" },
+  { k: "sim", sel: "#panelSim", name: "Simulation" }, { k: "chart", sel: "#panelChart", name: "Forecast chart" },
+  { k: "log", sel: "#panelLog", name: "Activity" }, { k: "whatif", sel: "#panelWhatIf", name: "What if" },
+  { k: "next", sel: '[data-f="next"]', name: "Next-change line on cards" }, { k: "minute", sel: ".card .flow", name: "Picked-this-minute bar" }
+];
+const Custom = {
+  KEY: "flowboard.custom",
+  s: null,
+  defaults(){
+    return { theme: "light", auto: "off", colors: { picking: null, groot: null, filling: null, brand: null },
+      scale: 1, density: "normal", radius: "normal", font: "system", weight: "light", bg: "gradient", shadow: "soft",
+      hidden: [], names: {}, alerts: { done: true, milestones: true, late: true, breakSoon: true, sound: true } };
+  },
+  load(){
+    const d = Custom.defaults();
+    let s = {};
+    try { s = JSON.parse(localStorage.getItem(Custom.KEY) || "{}"); } catch (e) {}
+    if (!s.theme){ try { s.theme = localStorage.getItem("flowboard.theme") || "light"; } catch (e) {} }
+    Custom.s = Object.assign(d, s, { colors: Object.assign(d.colors, s.colors || {}), alerts: Object.assign(d.alerts, s.alerts || {}) });
+  },
+  save(){ try { localStorage.setItem(Custom.KEY, JSON.stringify(Custom.s)); } catch (e) {} },
+  rgba(hex, a){ const n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; },
+  shade(hex, f){ const n = parseInt(hex.slice(1), 16); const c = v => Math.max(0, Math.min(255, Math.round(v * f))); return "#" + [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => c(v).toString(16).padStart(2, "0")).join(""); },
+  effTheme(){
+    const s = Custom.s;
+    if (s.auto === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) return s.theme === "control" ? "control" : "dark";
+    if (s.auto === "evening"){ const h = new Date().getHours(); if (h >= 20 || h < 6) return s.theme === "control" ? "control" : "dark"; }
+    return s.theme;
+  },
+  apply(rebuild){
+    const s = Custom.s, root = document.documentElement, st = root.style;
+    Theme.apply(Custom.effTheme());
+    for (const k of ["picking", "groot", "filling"]){
+      const c = s.colors[k];
+      if (c){ st.setProperty("--" + k, c); st.setProperty("--" + k + "-dim", Custom.rgba(c, .12)); }
+      else { st.removeProperty("--" + k); st.removeProperty("--" + k + "-dim"); }
+      PROC[k].hex = c || DEF_HEX[k];
+    }
+    if (s.colors.brand){ st.setProperty("--brand", s.colors.brand); st.setProperty("--brand-2", Custom.shade(s.colors.brand, .94)); }
+    else { st.removeProperty("--brand"); st.removeProperty("--brand-2"); }
+    st.zoom = s.scale && s.scale !== 1 ? s.scale : "";
+    root.dataset.density = s.density; root.dataset.radius = s.radius; root.dataset.font = s.font;
+    root.dataset.weight = s.weight; root.dataset.bg = s.bg; root.dataset.shadow = s.shadow;
+    Custom.applyLayout();
+    const changedNames = Custom.applyNames();
+    if (typeof FlowView !== "undefined") FlowView.sig = "";
+    if (rebuild || changedNames){
+      if (typeof UIRenderer !== "undefined" && UIRenderer.refs && document.getElementById("board").children.length){
+        UIRenderer.buildBoard(); Custom.applyLayout(); AnimationEngine.disp = {};
+      }
+    }
+  },
+  applyLayout(){
+    document.querySelectorAll(".user-hidden").forEach(e => e.classList.remove("user-hidden"));
+    for (const p of PANELS) if (Custom.s.hidden.includes(p.k)) document.querySelectorAll(p.sel).forEach(e => e.classList.add("user-hidden"));
+    const cols = document.querySelector(".cols");
+    if (cols) cols.classList.toggle("user-hidden", Custom.s.hidden.includes("log") && Custom.s.hidden.includes("whatif"));
+  },
+  _names: "",
+  applyNames(){
+    const sig = JSON.stringify(Custom.s.names);
+    if (!Custom._orig){ Custom._orig = {}; for (const p of PROCS) Custom._orig[p.key] = { name: p.name, sub: p.sub, short: SHORT[p.key] }; }
+    for (const p of PROCS){
+      const o = Custom._orig[p.key], n = Custom.s.names[p.key] || {};
+      p.name = (n.name || "").trim() ? n.name.trim().toUpperCase() : o.name;
+      p.sub = (n.sub || "").trim() || o.sub;
+      SHORT[p.key] = (n.name || "").trim() ? n.name.trim() : o.short;
+    }
+    const changed = sig !== Custom._names; Custom._names = sig; return changed;
+  },
+  code(){
+    const { hidden, names, alerts, ...look } = Custom.s;
+    return "FB1:" + btoa(unescape(encodeURIComponent(JSON.stringify(look))));
+  },
+  fromCode(txt){
+    const m = String(txt).trim().match(/^FB1:(.+)$/); if (!m) return false;
+    try { const look = JSON.parse(decodeURIComponent(escape(atob(m[1])))); Object.assign(Custom.s, look, { colors: Object.assign(Custom.defaults().colors, look.colors || {}) }); return true; } catch (e) { return false; }
+  },
+  sec: "look",
+  open(sec){
+    if (sec) Custom.sec = sec;
+    const s = Custom.s;
+    const seg = (id, opts, cur) => '<div class="seg" id="' + id + '">' + opts.map(o => '<button data-v="' + o[0] + '" aria-pressed="' + (String(cur) === String(o[0])) + '">' + o[1] + '</button>').join("") + '</div>';
+    const row = (label, html) => '<div class="st-row"><label>' + label + '</label>' + html + '</div>';
+    const sections = {
+      look: () =>
+        '<div class="st-sec"><h4>THEME</h4><div class="themegrid">' + Theme.list.map(t => '<button class="themecard" data-th="' + t.k + '" aria-pressed="' + (t.k === s.theme) + '">' +
+          '<div class="pv" style="background:' + t.pv[0] + '"><i style="background:' + t.pv[1] + '"></i><i style="background:' + t.pv[1] + '"></i><i style="background:' + t.pv[1] + '"></i></div>' +
+          '<b>' + t.name + '</b><span>' + t.sub + '</span></button>').join("") + '</div>' +
+        row("Automatic dark", seg("stAuto", [["off", "Off"], ["system", "Follow device"], ["evening", "20:00 – 06:00"]], s.auto)) +
+        '<h4>COLOURS</h4><div class="st-colors">' + [["picking", PROCS[0].name], ["groot", PROCS[1].name], ["filling", PROCS[2].name], ["brand", "BRAND / BUTTONS"]].map(c =>
+          '<div class="st-color"><span>' + Notes.esc(c[1]) + '</span><input type="color" data-col="' + c[0] + '" value="' + (s.colors[c[0]] || DEF_HEX[c[0]]) + '"></div>').join("") + '</div>' +
+        '<div class="st-pal">' + PALETTES.map((pl, i) => '<button data-pal="' + i + '"><i>' + ["picking", "groot", "filling", "brand"].map(k => '<b style="background:' + (pl.c[k] || DEF_HEX[k]) + '"></b>').join("") + '</i>' + pl.name + '</button>').join("") + '</div>' +
+        '<h4>STYLE</h4>' +
+        row("Text size", seg("stScale", [[0.9, "S"], [1, "M"], [1.1, "L"], [1.25, "XL"], [1.4, "XXL"]], s.scale)) +
+        row("Layout", seg("stDensity", [["normal", "Comfortable"], ["compact", "Compact"]], s.density)) +
+        row("Corners", seg("stRadius", [["sharp", "Sharp"], ["normal", "Soft"], ["round", "Round"]], s.radius)) +
+        row("Font", seg("stFont", [["system", "System"], ["rounded", "Rounded"], ["condensed", "Condensed"], ["mono", "Mono"], ["classic", "Classic"]], s.font)) +
+        row("Big numbers", seg("stWeight", [["light", "Light"], ["regular", "Regular"], ["bold", "Bold"]], s.weight)) +
+        row("Background", seg("stBg", [["gradient", "Gradient"], ["nodots", "No dots"], ["plain", "Plain"]], s.bg)) +
+        row("Shadows", seg("stShadow", [["none", "Flat"], ["soft", "Soft"], ["strong", "Deep"]], s.shadow)) +
+        '<h4>SHARE THIS LOOK</h4><p class="sub" style="margin:0">Copy the code and paste it on another device (e.g. the hall monitor) to get the same look.</p>' +
+        '<textarea class="st-code" id="stCode">' + Custom.code() + '</textarea>' +
+        '<div class="st-row"><button class="btn sm" id="stCopy">Copy code</button><button class="btn sm" id="stApply">Apply pasted code</button><div class="spacer" style="margin-left:auto"></div><button class="btn sm ghost" id="stReset">Reset look to default</button></div></div>',
+      layout: () =>
+        '<div class="st-sec"><h4>DASHBOARD PANELS</h4><div class="st-toggles">' + PANELS.map(p => '<label><input type="checkbox" data-pn="' + p.k + '"' + (s.hidden.includes(p.k) ? "" : " checked") + '>' + p.name + '</label>').join("") + '</div>' +
+        '<h4>AREA NAMES</h4><p class="sub" style="margin:0">Leave empty to keep the default name.</p><div class="st-names">' +
+          PROCS.map(p => { const o = (Custom._orig || {})[p.key] || p, n = s.names[p.key] || {};
+            return fieldHTML("nm-" + p.key, "Name · " + o.name, "text", Notes.esc(n.name || ""), 'maxlength="24" placeholder="' + Notes.esc(o.name) + '"') +
+              fieldHTML("sb-" + p.key, "Subtitle", "text", Notes.esc(n.sub || ""), 'maxlength="30" placeholder="' + Notes.esc(o.sub) + '"'); }).join("") +
+        '</div><div class="st-row"><button class="btn sm primary" id="stNames">Save names</button><button class="btn sm ghost" id="stNamesReset">Reset names</button></div></div>',
+      alerts: () =>
+        '<div class="st-sec"><p class="sub" style="margin:0">Pop-ups (and a short sound) while FLOWBOARD is open. Works on every screen, including the hall monitor.</p><div class="st-toggles">' +
+          [["done", "An area is finished"], ["milestones", "50% · 75% · 90% done"], ["late", "An area turns late for its deadline"], ["breakSoon", "Break starts in 5 minutes"], ["sound", "Play a sound"]].map(a =>
+            '<label><input type="checkbox" data-al="' + a[0] + '"' + (s.alerts[a[0]] ? " checked" : "") + '>' + a[1] + '</label>').join("") +
+        '</div><div class="st-row"><button class="btn sm" id="stTest">Test alert</button></div></div>',
+      brand: () => '<div class="st-sec">' + Brand.section().replace('<h3 style="margin-top:22px">Branding</h3>', "") + '</div>'
+    };
+    Modal.open('<h3>Customize</h3>' +
+      '<div class="seg st-tabs" id="stTabs">' + [["look", "Look"], ["layout", "Layout"], ["alerts", "Alerts"], ["brand", "Branding"]].map(t => '<button data-sec="' + t[0] + '" aria-pressed="' + (Custom.sec === t[0]) + '">' + t[1] + '</button>').join("") + '</div>' +
+      sections[Custom.sec]() +
+      '<div class="rowbtns"><button class="btn primary" data-x="ok">Done</button></div>', el => Custom.wire(el));
+  },
+  set(fn, rebuild){ fn(Custom.s); Custom.save(); Custom.apply(rebuild); refreshAll(true); },
+  wire(el){
+    const q = sel => el.querySelector(sel), qa = sel => el.querySelectorAll(sel);
+    q('[data-x="ok"]').onclick = Modal.close;
+    qa("#stTabs [data-sec]").forEach(b => b.onclick = () => Custom.open(b.dataset.sec));
+    const segWire = (id, key, num) => { const g = q("#" + id); if (!g) return; g.querySelectorAll("[data-v]").forEach(b => b.onclick = () => {
+      Custom.set(s => { s[key] = num ? +b.dataset.v : b.dataset.v; });
+      g.querySelectorAll("[data-v]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      const c = q("#stCode"); if (c) c.value = Custom.code();
+    }); };
+    segWire("stAuto", "auto"); segWire("stScale", "scale", true); segWire("stDensity", "density"); segWire("stRadius", "radius");
+    segWire("stFont", "font"); segWire("stWeight", "weight"); segWire("stBg", "bg"); segWire("stShadow", "shadow");
+    qa("[data-th]").forEach(b => b.onclick = () => { Custom.set(s => { s.theme = b.dataset.th; }); qa("[data-th]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); const c = q("#stCode"); if (c) c.value = Custom.code(); });
+    qa("[data-col]").forEach(i => i.oninput = () => { Custom.set(s => { s.colors[i.dataset.col] = i.value.toUpperCase() === DEF_HEX[i.dataset.col] ? null : i.value; }, true); const c = q("#stCode"); if (c) c.value = Custom.code(); });
+    qa("[data-pal]").forEach(b => b.onclick = () => { Custom.set(s => { s.colors = Object.assign({}, PALETTES[+b.dataset.pal].c); }, true); Custom.open("look"); });
+    if (q("#stCopy")){
+      q("#stCopy").onclick = async () => { const t = q("#stCode"); try { await navigator.clipboard.writeText(t.value); Toast.show("Theme code copied", "Paste it in Customize on the other screen."); } catch (e) { t.select(); Toast.show("Select and copy", "", "err"); } };
+      q("#stApply").onclick = () => { if (Custom.fromCode(q("#stCode").value)){ Custom.save(); Custom.apply(true); refreshAll(true); Custom.open("look"); Toast.show("Look applied", ""); } else Toast.show("That is not a theme code", "It should start with FB1:", "err"); };
+      q("#stReset").onclick = () => { const d = Custom.defaults(); Custom.set(s => { Object.assign(s, { theme: d.theme, auto: d.auto, colors: d.colors, scale: 1, density: d.density, radius: d.radius, font: d.font, weight: d.weight, bg: d.bg, shadow: d.shadow }); }, true); Custom.open("look"); };
+    }
+    qa("[data-pn]").forEach(c => c.onchange = () => Custom.set(s => { s.hidden = s.hidden.filter(k => k !== c.dataset.pn); if (!c.checked) s.hidden.push(c.dataset.pn); }));
+    if (q("#stNames")){
+      q("#stNames").onclick = () => { Custom.set(s => { for (const p of PROCS) s.names[p.key] = { name: q("#nm-" + p.key).value, sub: q("#sb-" + p.key).value }; }, true); UIRenderer.buildSetup(); Toast.show("Names saved", ""); Custom.open("layout"); };
+      q("#stNamesReset").onclick = () => { Custom.set(s => { s.names = {}; }, true); UIRenderer.buildSetup(); Custom.open("layout"); };
+    }
+    qa("[data-al]").forEach(c => c.onchange = () => Custom.set(s => { s.alerts[c.dataset.al] = c.checked; }));
+    if (q("#stTest")) q("#stTest").onclick = () => Alerts.fire("🔔 Test alert", "This is how alerts look and sound.");
+    if (q("#lgFile")) Brand.wire(el);
+  }
+};
+
+/* ---------------------------------------------------------------- Alerts: milestones, finished, late, break soon */
+const Alerts = {
+  mem: {}, seededFor: null, brkFired: {},
+  fire(title, body){
+    Toast.show(title, body);
+    if (Custom.s.alerts.sound && !(Plan.active && Plan.speed > 0)) Beep.play(2);
+    Beep.notify(title.replace(/^[^\w]+/, ""), body);
+  },
+  check(now){
+    const A = Custom.s.alerts, key = state.shift.startedAt + "|" + (Plan.active ? "plan" : "live");
+    const seed = Alerts.seededFor !== key;
+    if (seed){ Alerts.mem = {}; Alerts.brkFired = {}; Alerts.seededFor = key; }
+    for (const p of PROCS){
+      const m = Metrics.cache[p.key], sc = state.processes[p.key];
+      if (!m || !sc.snapshots.length) continue;
+      const base = sc.baseline || 0, pct = base > 0 ? (base - m.rem) / base : 0;
+      const late = m.rem > 0.5 && (m.finish == null || m.finish > m.deadline);
+      const done = m.status === "COMPLETED";
+      const prev = Alerts.mem[p.key];
+      Alerts.mem[p.key] = { pct, late, done };
+      if (seed || !prev) continue;
+      if (A.done && done && !prev.done) Alerts.fire("✅ " + p.name + " finished", "Cleared at " + Time.hm(now));
+      if (A.milestones && !done) for (const th of [0.5, 0.75, 0.9]) if (prev.pct < th && pct >= th) Alerts.fire("📈 " + p.name + " " + th * 100 + "% done", nf(m.rem) + " left · finish " + (m.finish ? Time.hmRounded(m.finish) : "—"));
+      if (A.late && late && !prev.late) Alerts.fire("⚠️ " + p.name + " at risk", nf(m.remAtDeadline) + " would still be open at " + Time.hm(m.deadline));
+      if (A.late && !late && prev.late && !done) Alerts.fire("👍 " + p.name + " back on track", "Finish " + (m.finish ? Time.hmRounded(m.finish) : "—"));
+    }
+    if (A.breakSoon && state.shift.startedAt){
+      for (const b of BreakEngine.resolved(state.processes.picking)){
+        const left = b.s - now, id = b.name + b.s;
+        if (left > 0 && left <= 5 * 60000 && !Alerts.brkFired[id]){ Alerts.brkFired[id] = 1; if (!seed) Alerts.fire("☕ " + b.name + " in " + Math.ceil(left / 60000) + " min", "Starts " + Time.hm(b.s)); }
+      }
+    }
+  }
+};
+
+/* ---------------------------------------------------------------- Break countdown in the header */
+const BreakChip = {
+  last: "",
+  render(now){
+    const el = document.getElementById("brkChip"); if (!el) return;
+    const brs = BreakEngine.resolved(state.processes.picking).slice().sort((a, b) => a.s - b.s);
+    const cur = brs.filter(b => b.s <= now && now < b.e);
+    const next = brs.find(b => b.s > now);
+    let txt = "", cls = "brkchip";
+    if (!state.shift.startedAt){ txt = ""; }
+    else if (cur.length){
+      const end = Math.max(...cur.map(b => b.e));
+      txt = "☕ " + cur.map(b => b.name).join(" + ") + " · ends in " + durHMS(end - now).replace(/^00:/, ""); cls += " on now";
+    } else if (next && next.s - now <= 90 * 60000){
+      txt = "☕ " + next.name + " in " + (next.s - now < 600000 ? durHMS(next.s - now).replace(/^00:/, "") : durShort(next.s - now)); cls += " on";
+    }
+    const sig = txt + cls;
+    if (sig !== BreakChip.last){ BreakChip.last = sig; el.textContent = txt; el.className = cls; }
+  }
+};
+
+/* ---------------------------------------------------------------- Hall message banner */
+const HallMsg = {
+  COLORS: [["#E0333B", "Red"], ["#EF8A12", "Orange"], ["#1D6FF2", "Blue"], ["#00A46A", "Green"], ["#171A1F", "Black"]],
+  get(){ return state.ui.message || null; },
+  render(){
+    const m = HallMsg.get(), el = document.getElementById("hallMsg");
+    const live = m && m.text && (!m.until || m.until > NOW()) && !m.hidden;
+    el.hidden = !live;
+    if (!live) return;
+    el.style.setProperty("--hm", m.color || "#E0333B");
+    setText(document.getElementById("hallTx"), m.text);
+    setText(document.getElementById("hallUntil"), m.until ? "until " + Time.hm(m.until) : "");
+  },
+  open(){
+    const m = HallMsg.get() || {};
+    let color = m.color || "#E0333B";
+    Modal.open('<h3>Hall message</h3><p class="sub">A big banner at the top of every screen and on the hall monitor (Numbers only). Clears itself at the end time.</p>' +
+      '<div class="field"><label for="hmT">Message</label><input id="hmT" type="text" maxlength="120" placeholder="e.g. Extra help needed at dock 4" value="' + Notes.esc(m.text || "") + '"></div>' +
+      '<div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:12px">' +
+        '<div class="field"><label>Colour</label><div class="nt-dots" id="hmC">' + HallMsg.COLORS.map(c => '<button class="nt-dot" data-c="' + c[0] + '" aria-label="' + c[1] + '" aria-pressed="' + (c[0] === color) + '" style="background:' + c[0] + '"></button>').join("") + '</div></div>' +
+        fieldHTML("hmU", "Until (optional)", "time", m.until ? Time.hm(m.until) : "", 'step="60"') +
+      '</div>' +
+      '<div class="rowbtns"><button class="btn ghost" data-x="clear">Remove message</button><button class="btn ghost" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Show message</button></div>', el => {
+      el.querySelectorAll("#hmC [data-c]").forEach(b => b.onclick = () => { color = b.dataset.c; el.querySelectorAll("#hmC [data-c]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+      el.querySelector('[data-x="cancel"]').onclick = Modal.close;
+      el.querySelector('[data-x="clear"]').onclick = () => { state.ui.message = null; touch(); HallMsg.render(); Modal.close(); };
+      el.querySelector('[data-x="ok"]').onclick = () => {
+        const text = el.querySelector("#hmT").value.trim();
+        if (!text){ setErr("hmT", "Type a message."); return; }
+        const u = el.querySelector("#hmU").value;
+        const until = u && Time.parseHM(u) != null ? resolveOnShiftDay(u) : null;
+        state.ui.message = { text, color, until, hidden: false };
+        Log.add("event", null, "Hall message", text + (until ? " (until " + Time.hm(until) + ")" : ""));
+        touch(); HallMsg.render(); Modal.close();
+      };
+    });
+  },
+  init(){
+    document.getElementById("btnMsg").onclick = HallMsg.open;
+    document.getElementById("hallX").onclick = () => { if (state.ui.message){ state.ui.message.hidden = true; touch(); HallMsg.render(); } };
+    HallMsg.render();
+  }
+};
+
+/* ---------------------------------------------------------------- Keep the screen awake in Numbers only */
+const Wake = {
+  lock: null,
+  async want(on){
+    try {
+      if (on && "wakeLock" in navigator && !Wake.lock && !document.hidden){
+        Wake.lock = await navigator.wakeLock.request("screen");
+        Wake.lock.addEventListener("release", () => { Wake.lock = null; });
+      } else if (!on && Wake.lock){ await Wake.lock.release(); Wake.lock = null; }
+    } catch (e) {}
+  }
+};
+document.addEventListener("visibilitychange", () => { if (!document.hidden && typeof state !== "undefined" && state && state.ui.controlRoom) Wake.want(true); });
+
+/* ---------------------------------------------------------------- Keyboard shortcuts */
+const Keys = {
+  help(){
+    const row = (k, t) => '<span><span class="kbd">' + k + '</span></span><span>' + t + '</span>';
+    Modal.open('<h3>Keyboard shortcuts</h3><div class="keys">' +
+      row("1 – 6", "Dashboard · Refill · Notes · Tools · Performance · Report") + row("F", "Full screen") + row("R", "Numbers only (hall monitor)") +
+      row("N", "New note") + row("T", "Customize (theme, colours, layout, alerts)") + row("M", "Hall message") + row("P", "Plan ahead") + row("?", "This help") + row("Esc", "Close a window") +
+      '</div><div class="rowbtns"><button class="btn primary" data-x="ok">Got it</button></div>', el => el.querySelector('[data-x="ok"]').onclick = Modal.close);
+  },
+  init(){
+    document.addEventListener("keydown", e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (document.getElementById("scrim").classList.contains("open")) return;
+      const tabs = ["main", "refill", "notes", "tools", "perf", "report"];
+      if (/^[1-6]$/.test(e.key)){ Tabs.set(tabs[+e.key - 1]); e.preventDefault(); return; }
+      const k = e.key.toLowerCase();
+      if (k === "f"){ document.getElementById("btnFullscreen").click(); }
+      else if (k === "r"){ ControlRoom.toggle(); }
+      else if (k === "n"){ Tabs.set("notes"); setTimeout(() => { const el = document.getElementById("ncTitle"); if (el) el.focus(); }, 30); }
+      else if (k === "t"){ Theme.open(); }
+      else if (k === "m"){ HallMsg.open(); }
+      else if (k === "p"){ PlanMode.open(); }
+      else if (e.key === "?"){ Keys.help(); }
+      else return;
+      e.preventDefault();
+    });
+  }
+};
+
+/* ---------------------------------------------------------------- Report + shift history */
+const Report = {
+  KEY: "flowboard.history", view: null,
+  history(){ try { return JSON.parse(localStorage.getItem(Report.KEY) || "[]"); } catch (e) { return []; } },
+  saveHist(h){ try { localStorage.setItem(Report.KEY, JSON.stringify(h.slice(0, 60))); } catch (e) {} },
+  perfOf(a){
+    const L = Perf.rows(a).filter(r => r.perf != null);
+    const exp = L.reduce((x, r) => x + r.expected, 0), act = L.reduce((x, r) => x + r.done, 0);
+    return exp > 0 ? act / exp : null;
+  },
+  summary(){
+    const now = NOW(), w = shiftWindow();
+    const areas = Perf.areas().map(a => {
+      const has = a.raw.snapshots.length > 0;
+      const isR = a.key === "refill";
+      const rem = has ? (isR ? RefillEngine.split(now).total : CalculationEngine.remainingAt(a.sc, now)) : 0;
+      const base = isR ? (has ? a.raw.snapshots[0].remaining : 0) : (a.raw.baseline || 0);
+      const fin = !has ? null : isR ? RefillEngine.plan(now).all : WorkforceFlowEngine.finishOf(a.key);
+      const dl = isR ? w.end : deadlineOf(a.key);
+      return { key: a.key, name: a.name, hex: a.hex, has, base: Math.round(base), done: Math.round(Math.max(0, base - rem)), rem: Math.round(rem),
+        fin, dl, met: fin != null && fin <= dl, perf: Report.perfOf(a),
+        pStart: has ? (isR ? a.raw.basePeople : a.raw.basePeople) : 0, pNow: has ? StaffingEventManager.peopleAt(a.sc, now) : 0,
+        norm: has ? StaffingEventManager.normAt(a.sc, now) : 0, updates: Math.max(0, a.raw.snapshots.length - 1) };
+    });
+    return {
+      id: uid(), savedAt: Date.now(), at: now, type: state.shift.type, start: w.start, end: w.end,
+      day: new Date(w.start).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+      areas,
+      moves: WorkforceFlowEngine.transfers().map(t => ({ from: SHORT[t.from], to: SHORT[t.to], people: t.people, at: t.at })),
+      notes: Notes.list.filter(n => !n.archived && (n.pinned || Date.now() - n.t < 16 * 3600e3)).map(n => Notes.asText(n)),
+      log: state.log.slice(0, 40).map(e => ({ t: e.t, title: e.title, detail: e.detail }))
+    };
+  },
+  html(r){
+    const pc = v => v == null ? "—" : Math.round(v * 100) + "%";
+    return '<div class="rp" id="rpPrint">' +
+      '<div class="rp-head">' + (Brand.logo ? '<img src="' + Brand.logo + '" alt="">' : "") +
+        '<div><h2>Shift report · ' + r.type + '</h2><p>' + r.day + ' · ' + Time.hm(r.start) + '–' + Time.hm(r.end) + (Brand.site ? " · " + Notes.esc(Brand.site) : "") + '</p></div>' +
+        '<div class="rp-stamp">Status at ' + Time.hm(r.at) + '<br>FLOWBOARD</div></div>' +
+      '<div class="rp-areas">' + r.areas.filter(a => a.has).map(a =>
+        '<div class="rp-a" style="--accent:' + a.hex + '"><h4>' + a.name + '</h4>' +
+          '<div class="big">' + (a.rem <= 0 ? "Done" : nf(a.rem) + " left") + '</div>' +
+          '<dl><dt>Total workload</dt><dd>' + nf(a.base) + '</dd><dt>Done</dt><dd>' + nf(a.done) + '</dd>' +
+          '<dt>Finish</dt><dd>' + (a.fin ? Time.hmRounded(a.fin) : "—") + '</dd>' +
+          '<dt>Deadline ' + Time.hm(a.dl) + '</dt><dd class="' + (a.met ? "ok" : "bad") + '">' + (a.met ? "met ✓" : "missed ✕") + '</dd>' +
+          '<dt>People start → now</dt><dd>' + a.pStart + ' → ' + a.pNow + '</dd><dt>Norm</dt><dd>' + nf(a.norm) + '/h</dd>' +
+          '<dt>Speed vs plan</dt><dd class="' + (a.perf == null ? "" : a.perf >= 1 ? "ok" : "bad") + '">' + pc(a.perf) + '</dd>' +
+          '<dt>Workload updates</dt><dd>' + a.updates + '</dd></dl></div>').join("") + '</div>' +
+      (r.moves.length ? '<h5>PEOPLE HAND-OVERS</h5><ul>' + r.moves.map(m => '<li>' + Time.hm(m.at) + ' — ' + m.people + ' people ' + m.from + ' → ' + m.to + '</li>').join("") + '</ul>' : "") +
+      (r.notes.length ? '<h5>NOTES</h5><ul>' + r.notes.map(n => '<li style="white-space:pre-wrap">' + Notes.esc(n) + '</li>').join("") + '</ul>' : "") +
+      (r.log.length ? '<h5>ACTIVITY</h5><div class="rp-log">' + r.log.map(e => '<span>' + Time.hm(e.t) + '</span><span>' + Notes.esc(e.title) + (e.detail ? ' — ' + Notes.esc(e.detail) : "") + '</span>').join("") + '</div>' : "") +
+    '</div>';
+  },
+  text(r){
+    const out = ["SHIFT REPORT · " + r.type + " · " + r.day, Time.hm(r.start) + "–" + Time.hm(r.end) + " · status " + Time.hm(r.at), ""];
+    for (const a of r.areas.filter(a => a.has))
+      out.push(a.name + ": " + (a.rem <= 0 ? "done" : nf(a.rem) + " left") + " of " + nf(a.base) + " · finish " + (a.fin ? Time.hmRounded(a.fin) : "—") +
+        " · deadline " + (a.met ? "met" : "missed") + " · speed " + (a.perf == null ? "—" : Math.round(a.perf * 100) + "%"));
+    if (r.moves.length){ out.push("", "HAND-OVERS"); r.moves.forEach(m => out.push(Time.hm(m.at) + " " + m.people + " " + m.from + " → " + m.to)); }
+    if (r.notes.length){ out.push("", "NOTES"); r.notes.forEach(n => out.push("• " + n)); }
+    return out.join("\n");
+  },
+  archive(silent){
+    if (!state.shift.startedAt) return false;
+    const h = Report.history(), r = Report.summary();
+    h.unshift(r); Report.saveHist(h);
+    if (!silent) Toast.show("Saved to history", r.type + " · " + r.day);
+    return true;
+  },
+  render(){
+    const el = document.getElementById("tabReport");
+    const r = Report.view || (state.shift.startedAt ? Report.summary() : null);
+    const h = Report.history();
+    el.innerHTML =
+      '<div class="panel-head"><h2>Report</h2><span class="meta">' + (Report.view ? "Saved report from history" : "Live report of the current shift") + '</span><div class="spacer"></div>' +
+        '<div class="rp-actions">' + (Report.view ? '<button class="btn sm" id="rpLive">Back to current shift</button>' : "") +
+        '<button class="btn sm primary" id="rpPrintBtn">Print / save as PDF</button><button class="btn sm" id="rpCopy">Copy text</button>' +
+        (!Report.view ? '<button class="btn sm" id="rpSave">Save to history</button>' : "") + '</div></div>' +
+      (r ? Report.html(r) : '<div class="nt-empty"><b>📄</b>Start a shift to see its report here.</div>') +
+      '<h2 style="font-size:14.5px;letter-spacing:.12em;margin:8px 0 12px">HISTORY</h2>' +
+      (h.length ? '<div class="hist">' + h.map(x => '<div class="hrow" data-h="' + x.id + '"><b>' + new Date(x.start).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) + '</b><span>' + x.type + '</span>' +
+        '<span class="hs">' + x.areas.filter(a => a.has).map(a => '<span>' + (SHORT[a.key] || "Refill") + ' <i>' + (a.fin ? Time.hmRounded(a.fin) : "—") + '</i>' + (a.perf != null ? ' · ' + Math.round(a.perf * 100) + '%' : "") + '</span>').join("") + '</span>' +
+        '<button class="xbtn" data-hdel="' + x.id + '" aria-label="Delete">×</button></div>').join("") + '</div>'
+        : '<p class="empty">No saved shifts yet. Shifts are saved automatically when you press New shift, or with "Save to history".</p>');
+    const $ = id => document.getElementById(id);
+    $("rpPrintBtn").onclick = () => { if (!r){ Toast.show("Nothing to print", "Start a shift first.", "err"); return; } window.print(); };
+    $("rpCopy").onclick = () => r && ExportManager.deliver("report.txt", Report.text(r), "Shift report");
+    if ($("rpSave")) $("rpSave").onclick = () => { if (Report.archive()) Report.render(); else Toast.show("Nothing to save", "Start a shift first.", "err"); };
+    if ($("rpLive")) $("rpLive").onclick = () => { Report.view = null; Report.render(); };
+    el.querySelectorAll("[data-h]").forEach(row => row.onclick = e => {
+      if (e.target.closest("[data-hdel]")) return;
+      Report.view = Report.history().find(x => x.id === row.dataset.h) || null; Report.render(); window.scrollTo({ top: 0 });
+    });
+    el.querySelectorAll("[data-hdel]").forEach(b => b.onclick = () => {
+      if (!b.classList.contains("sure")){ b.classList.add("sure"); b.style.background = "var(--crit)"; b.style.color = "#fff"; setTimeout(() => { if (b.isConnected){ b.classList.remove("sure"); b.style.background = ""; b.style.color = ""; } }, 2500); return; }
+      Report.saveHist(Report.history().filter(x => x.id !== b.dataset.hdel)); if (Report.view && Report.view.id === b.dataset.hdel) Report.view = null; Report.render();
+    });
+  }
+};
+
 /* ---------------------------------------------------------------- Tabs */
 const Tabs = {
   KEY: "flowboard.tab", cur: "main",
-  panes: { refill: "tabRefill", notes: "tabNotes", tools: "tabTools", perf: "tabPerf" },
+  panes: { refill: "tabRefill", notes: "tabNotes", tools: "tabTools", perf: "tabPerf", report: "tabReport" },
   set(tab){
     if (tab !== "main" && !Tabs.panes[tab]) tab = "main";
     Tabs.cur = tab;
@@ -3004,6 +3577,7 @@ const Tabs = {
     if (tab === "notes") Notes.build();
     if (tab === "tools") Tools.build();
     if (tab === "perf") Perf.render(true);
+    if (tab === "report") Report.render();
     if (tab === "main") refreshAll(true);
     try { window.scrollTo({ top: 0 }); } catch (e) {}
   },
@@ -3038,12 +3612,14 @@ const Theme = {
     meta.content = { light: "#F2F4F7", dark: "#0E1116", jumbo: "#FFD400", control: "#000000" }[Theme.cur];
     if (typeof FlowView !== "undefined"){ FlowView.sig = ""; }
   },
-  open(){
-    Modal.open('<h3>Theme</h3><p class="sub">Saved on this device. Control Room is made for the monitor in the hall.</p><div class="themegrid">' +
+  open(){ return Custom.open("look"); },
+  openOld(){
+    Modal.open('<h3>Theme &amp; branding</h3><p class="sub">Saved on this device. Control Room is made for the monitor in the hall.</p><div class="themegrid">' +
       Theme.list.map(t => '<button class="themecard" data-th="' + t.k + '" aria-pressed="' + (t.k === Theme.cur) + '">' +
         '<div class="pv" style="background:' + t.pv[0] + '"><i style="background:' + t.pv[1] + '"></i><i style="background:' + t.pv[1] + '"></i><i style="background:' + t.pv[1] + '"></i></div>' +
         '<b>' + t.name + '</b><span>' + t.sub + '</span></button>').join("") +
-      '</div><div class="rowbtns"><button class="btn primary" data-x="ok">Done</button></div>', el => {
+      '</div>' + Brand.section() + '<div class="rowbtns"><button class="btn primary" data-x="ok">Done</button></div>', el => {
+      Brand.wire(el);
       el.querySelectorAll("[data-th]").forEach(b => b.onclick = () => {
         Theme.apply(b.dataset.th);
         el.querySelectorAll("[data-th]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
@@ -3053,9 +3629,8 @@ const Theme = {
     });
   },
   init(){
-    let k = "light"; try { k = localStorage.getItem(Theme.KEY) || "light"; } catch (e) {}
-    Theme.apply(k);
-    document.getElementById("btnTheme").onclick = Theme.open;
+    Custom.load(); Custom.apply();
+    document.getElementById("btnTheme").onclick = () => Custom.open();
   }
 };
 
@@ -3655,6 +4230,7 @@ const Actions = {
         el.querySelector('[data-x="export"]').onclick = () => ExportManager.json();
         el.querySelector('[data-x="ok"]').onclick = () => {
           const type = state.shift.type;
+          if (!Plan.active && Report.archive(true)) Toast.show("Shift saved to history", "See it under Report.");
           state = freshState(type);
           touch(); Modal.close();
           UIRenderer.buildSetup(); UIRenderer.syncSetup(); UIRenderer.renderLog();
@@ -3932,6 +4508,7 @@ const ControlRoom = {
   set(on){
     state.ui.controlRoom = on;
     document.body.classList.toggle("cr", on);
+    Wake.want(on);
     document.getElementById("btnControlRoom").setAttribute("aria-pressed", String(on));
     touch();
     setTimeout(() => { ChartEngine.draw(NOW()); FlowView.render(NOW(), true); }, 120);
@@ -4046,6 +4623,8 @@ function frame(){
     if (Tabs.cur === "perf") Perf.render();
     if (Tabs.cur === "tools") Tools.tick();
     Notes.checkReminders(); Tools.checkAlarms();
+    BreakChip.render(now); HallMsg.render(); Alerts.check(now);
+    if (Custom.s.auto !== "off" && document.documentElement.dataset.theme !== Custom.effTheme()){ Theme.apply(Custom.effTheme()); FlowView.sig = ""; }
     lastSlow = real;
   }
   if (real - lastChart >= (playing ? 1500 : Power.low ? 30000 : 10000)){
@@ -4290,12 +4869,16 @@ function init(){
   ChartEngine.draw(NOW());
   setTimeout(() => wrap.classList.remove("intro"), 1700);
   Power.decide();
+  Brand.load(); Brand.apply();
   Theme.init();
+  UIRenderer.buildBoard(); UIRenderer.buildSetup();
   SimPanel.init();
   PlanMode.init();
   Notes.init();
   Tools.load();
   Tabs.init();
+  HallMsg.init();
+  Keys.init();
   Vis.init();
   document.getElementById("btnFlowRules").onclick = Actions.flowSettings;
   FlowView.render(NOW(), true); SimPanel.render(NOW(), true);
